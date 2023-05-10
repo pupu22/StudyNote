@@ -536,6 +536,9 @@ document.write(`大家好，我叫 ${name}`)
 
 某些运算符被执行时，系统内部自动将数据类型进行转换，这种转换称为隐式转换。
 
+- + 号两边只要有一个是字符串，都会把另外一个转成字符串
+- 除了+以外的算术运算符 比如 - * / 等都会把数据转成数字类型
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -557,7 +560,9 @@ document.write(`大家好，我叫 ${name}`)
     // 原因是将字符串 num2 转换成了数值，相当于 2
     // 然后数值 13 减去 数值 2
     console.log(num - num2)
-
+    
+    console.log(+'11'+ num) //24
+	  
     let a = prompt('请输入一个数字')
     let b = prompt('请再输入一个数字')
 
@@ -606,6 +611,9 @@ document.write(`大家好，我叫 ${name}`)
 </body>
 </html>
 ```
+- parseInt(数据) 只保留整数 
+- parseFloat(数据) 可以保留小数
 
+#### String
 
-
+变量.toString(进制)
