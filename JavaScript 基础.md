@@ -3846,3 +3846,867 @@ DOM 树中的任意节点都不是孤立存在的，它们要么是父子关系�
 | touchmove | 手指在一个元素上滑动时触发 |    
 | touchend | 手指在一个元素上移开时触发 |
 
+# Web APIs - 第5天笔记
+
+> 目标： 能够利用JS操作浏览器,具备利用本地存储实现学生就业表的能力
+
+*   BOM操作
+*   综合案例
+
+## js组成
+
+JavaScript的组成
+
+*   ECMAScript:
+    *   规定了js基础语法核心知识。
+    *   比如：变量、分支语句、循环语句、对象等等
+
+*   Web APIs :
+    *   DOM   文档对象模型， 定义了一套操作HTML文档的API
+    *   BOM   浏览器对象模型，定义了一套操作浏览器窗口的API
+
+## window对象
+
+**BOM** (Browser Object Model ) 是浏览器对象模型
+
+window ->
+nagivator document  history screen
+
+*   window对象是一个全局对象，也可以说是JavaScript中的顶级对象
+*   像document、alert()、console.log()这些都是window的属性，基本BOM的属性和方法都是window的
+*   所有通过var定义在全局作用域中的变量、函数都会变成window对象的属性和方法
+*   window对象下的属性和方法调用的时候可以省略window
+
+## 定时器-延迟函数
+
+JavaScript 内置的一个用来让代码延迟执行的函数，叫 setTimeout
+
+**语法：**
+
+```JavaScript
+setTimeout(回调函数, 延迟时间)
+```
+
+setTimeout 仅仅只执行一次，所以可以理解为就是把一段代码延迟执行, 平时省略window
+
+间歇函数 setInterval : 每隔一段时间就执行一次， , 平时省略window
+
+清除延时函数：
+
+```JavaScript
+clearTimeout(timerId)
+```
+
+两种定时器对比：执行的次数
+
+*   延时函数: 执行一次
+
+*   间歇函数:每隔一段时间就执行一次,除非手动清除
+
+> 注意点
+>
+> 1.  延时函数需要等待,所以后面的代码先执行
+> 2.  返回值是一个正整数，表示定时器的编号
+
+```html
+<body>
+  <script>
+    // 定时器之延迟函数
+
+    // 1. 开启延迟函数
+    let timerId = setTimeout(function () {
+      console.log('我只执行一次')
+    }, 3000)
+
+    // 1.1 延迟函数返回的还是一个正整数数字，表示延迟函数的编号
+    console.log(timerId)
+
+    // 1.2 延迟函数需要等待时间，所以下面的代码优先执行
+
+    // 2. 关闭延迟函数
+    clearTimeout(timerId)
+
+  </script>
+</body>
+```
+
+## JS执行机制
+
+JavaScript 语言的一大特点就是**单线程**，也就是说，同一个时间只能做一件事。\
+单线程就意味着，所有任务需要排队，前一个任务结束，才会执行后一个任务。这样所导致的问题是：
+如果 JS 执行的时间过长，这样就会造成页面的渲染不连贯，导致页面渲染加载阻塞的感觉。
+
+为了解决这个问题，利用多核 CPU 的计算能力，HTML5 提出 Web Worker 标准，允许 JavaScript 脚本创建多个线程。于是，JS 中出现了**同步**和**异步**。
+
+### 同步
+
+前一个任务结束后再执行后一个任务，程序的执行顺序与任务的排列顺序是一致的、同步的。比如做饭的同步做法：我们要烧水煮饭，等水开了（10分钟之后），再去切菜，炒菜。
+
+同步任务
+
+同步任务都在主线程上执行，形成一个执行栈。
+
+### 异步
+
+你在做一件事情时，因为这件事情会花费很长时间，在做这件事的同时，你还可以去处理其他事情。比如做饭的异步做法，我们在烧水的同时，利用这10分钟，去切菜，炒菜。
+
+他们的本质区别： 这条流水线上各个流程的执行顺序不同。
+
+异步任务
+
+JS 的异步是通过回调函数实现的。
+
+一般而言，异步任务有以下三种类型:
+
+1、普通事件，如 click、resize 等
+
+2、资源加载，如 load、error 等
+
+3、定时器，包括 setInterval、setTimeout 等
+
+异步任务相关添加到任务队列中（任务队列也称为消息队列）。
+
+### eventloop
+
+1.  先执行执行栈中的同步任务。
+
+2.  异步任务放入任务队列中。
+
+3.  一旦执行栈中的所有同步任务执行完毕，系统就会按次序读取任务队列中的异步任务，于是被读取的异步任务结束等待状态，进入执行栈，开始执行。
+
+[JavaScript之彻底理解EventLoop - 掘金 (juejin.cn)](https://juejin.cn/post/7020328988715270157)
+
+`JavaScript`的异步任务是存在优先级的。异步任务中先执行微任务，在执行宏任务。
+
+以下事件属于宏任务：
+
+*   `setInterval()`
+*   `setTimeout()`
+
+以下事件属于微任务：
+
+*   `promise.then()`
+*   `Async/Await(实际就是promise)`
+*   `new MutaionObserver()`
+
+## location对象
+
+location (地址) 它拆分并保存了 URL 地址的各个组成部分， 它是一个对象
+
+| 属性/方法    | 说明                            |
+| -------- | ----------------------------- |
+| href     | 属性，获取完整的 URL 地址，赋值时用于地址的跳转    |
+| search   | 属性，获取地址中携带的参数，符号 ？后面部分        |
+| hash     | 属性，获取地址中的啥希值，符号 # 后面部分        |
+| reload() | 方法，用来刷新当前页面，传入参数 true 时表示强制刷新 |
+
+```html
+<body>
+  <form>
+    <input type="text" name="search"> <button>搜索</button>
+  </form>
+  <a href="#/music">音乐</a>
+  <a href="#/download">下载</a>
+
+  <button class="reload">刷新页面</button>
+  <script>
+    // location 对象  
+    // 1. href属性 （重点） 得到完整地址，赋值则是跳转到新地址
+    console.log(location.href)
+    // location.href = 'http://www.itcast.cn'
+
+    // 2. search属性  得到 ? 后面的地址 
+    console.log(location.search)  // ?search=笔记本
+
+    // 3. hash属性  得到 # 后面的地址
+    console.log(location.hash)
+
+    // 4. reload 方法  刷新页面
+    const btn = document.querySelector('.reload')
+    btn.addEventListener('click', function () {
+      // location.reload() // 页面刷新
+      location.reload(true) // 强制页面刷新 ctrl+f5
+    })
+  </script>
+</body>
+```
+
+## navigator对象
+
+navigator是对象，该对象下记录了浏览器自身的相关信息
+
+常用属性和方法：
+
+*   通过 userAgent 检测浏览器的版本及平台
+
+```javascript
+// 检测 userAgent（浏览器信息）
+(function () {
+  const userAgent = navigator.userAgent
+  // 验证是否为Android或iPhone
+  const android = userAgent.match(/(Android);?[\s\/]+([\d.]+)?/)
+  const iphone = userAgent.match(/(iPhone\sOS)\s([\d_]+)/)
+  // 如果是Android或iPhone，则跳转至移动站点
+  if (android || iphone) {
+    location.href = 'http://m.itcast.cn'
+  }})();
+```
+
+## histroy对象
+
+history (历史)是对象，主要管理历史记录， 该对象与浏览器地址栏的操作相对应，如前进、后退等
+
+**使用场景**
+
+history对象一般在实际开发中比较少用，但是会在一些OA 办公系统中见到。
+
+常见方法：
+
+```html
+<body>
+  <button class="back">←后退</button>
+  <button class="forward">前进→</button>
+  <script>
+    // histroy对象
+
+    // 1.前进
+    const forward = document.querySelector('.forward')
+    forward.addEventListener('click', function () {
+      // history.forward() 
+      history.go(1)
+    })
+    // 2.后退
+    const back = document.querySelector('.back')
+    back.addEventListener('click', function () {
+      // history.back()
+      history.go(-1)
+    })
+  </script>
+</body>
+
+```
+
+## 本地存储（今日重点）
+
+本地存储：将数据存储在本地浏览器中
+
+常见的使用场景：
+
+<https://todomvc.com/examples/vanilla-es6/>    页面刷新数据不丢失
+
+好处：
+
+1、页面刷新或者关闭不丢失数据，实现数据持久化
+
+2、容量较大，sessionStorage和 localStorage 约 5M 左右
+
+### localStorage（重点）
+
+**作用:** 数据可以长期保留在本地浏览器中，刷新页面和关闭页面，数据也不会丢失
+
+\*\*特性：\*\*以键值对的形式存储，并且存储的是字符串， 省略了window
+
+![67604963508转存失败，建议直接上传图片文件](<转存失败，建议直接上传图片文件 assets/1676049635087.png>)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本地存储-localstorage</title>
+</head>
+
+<body>
+  <script>
+    // 本地存储 - localstorage 存储的是字符串 
+    // 1. 存储
+    localStorage.setItem('age', 18)
+
+    // 2. 获取
+    console.log(typeof localStorage.getItem('age'))
+
+    // 3. 删除
+    localStorage.removeItem('age')
+  </script>
+</body>
+
+</html>
+```
+
+### sessionStorage（了解）
+
+特性：
+
+*   用法跟localStorage基本相同
+*   区别是：当页面浏览器被关闭时，存储在 sessionStorage 的数据会被清除
+
+存储：sessionStorage.setItem(key,value)
+
+获取：sessionStorage.getItem(key)
+
+删除：sessionStorage.removeItem(key)
+
+### localStorage 存储复杂数据类型
+
+\*\*问题：\*\*本地只能存储字符串,无法存储复杂数据类型.
+
+\*\*解决：\*\*需要将复杂数据类型转换成 JSON字符串,在存储到本地
+
+\*\*语法：\*\*JSON.stringify(复杂数据类型)
+
+JSON字符串：
+
+*   首先是1个字符串
+*   属性名使用双引号引起来，不能单引号
+*   属性值如果是字符串型也必须双引号
+
+```html
+<body>
+  <script>
+    // 本地存储复杂数据类型
+    const goods = {
+      name: '小米',
+      price: 1999
+    }
+    // localStorage.setItem('goods', goods)
+    // console.log(localStorage.getItem('goods'))
+
+    // 1. 把对象转换为JSON字符串  JSON.stringify
+    localStorage.setItem('goods', JSON.stringify(goods))
+    // console.log(typeof localStorage.getItem('goods'))
+
+  </script>
+</body>
+```
+
+**问题：** 因为本地存储里面取出来的是字符串，不是对象，无法直接使用
+
+**解决：**  把取出来的字符串转换为对象
+
+**语法：** JSON.parse(JSON字符串)
+
+```html
+<body>
+  <script>
+    // 本地存储复杂数据类型
+    const goods = {
+      name: '小米',
+      price: 1999
+    }
+    // localStorage.setItem('goods', goods)
+    // console.log(localStorage.getItem('goods'))
+
+    // 1. 把对象转换为JSON字符串  JSON.stringify
+    localStorage.setItem('goods', JSON.stringify(goods))
+    // console.log(typeof localStorage.getItem('goods'))
+
+    // 2. 把JSON字符串转换为对象  JSON.parse
+    console.log(JSON.parse(localStorage.getItem('goods')))
+
+  </script>
+</body>
+```
+
+## 综合案例
+
+### 数组map 方法
+
+**使用场景：**
+
+map 可以遍历数组处理数据，并且返回新的数组
+
+**语法：**
+
+```javascript
+<body>
+  <script>
+  const arr = ['red', 'blue', 'pink']
+  // 1. 数组 map方法 处理数据并且 返回一个数组
+   const newArr = arr.map(function (ele, index) {
+    // console.log(ele)  // 数组元素
+    // console.log(index) // 索引号
+    return ele + '颜色'
+	})
+console.log(newArr)
+</script>
+</body>
+```
+
+> map 也称为映射。映射是个术语，指两个元素的集之间元素相互“对应”的关系。
+>
+> map重点在于有返回值，forEach没有返回值（undefined）
+
+### 数组join方法
+
+**作用：** join() 方法用于把数组中的所有元素转换一个字符串
+
+**语法：**
+
+```html
+<body>
+  <script>
+    const arr = ['red', 'blue', 'pink']
+
+    // 1. 数组 map方法 处理数据并且 返回一个数组
+    const newArr = arr.map(function (ele, index) {
+      // console.log(ele)  // 数组元素
+      // console.log(index) // 索引号
+      return ele + '颜色'
+    })
+    console.log(newArr)
+
+    // 2. 数组join方法  把数组转换为字符串
+    // 小括号为空则逗号分割
+    console.log(newArr.join())  // red颜色,blue颜色,pink颜色
+    // 小括号是空字符串，则元素之间没有分隔符
+    console.log(newArr.join(''))  //red颜色blue颜色pink颜色
+    console.log(newArr.join('|'))  //red颜色|blue颜色|pink颜色
+  </script>
+</body>
+```
+
+# Web APIs - 第6天笔记
+
+> 目标：能够利用正则表达式完成小兔鲜注册页面的表单验证，具备常见的表单验证能力
+
+*   正则表达式
+*   综合案例
+*   阶段案例
+
+## 正则表达式
+
+**正则表达式**（Regular Expression）是一种字符串匹配的模式（规则）
+
+**使用场景：**
+
+*   例如验证表单：手机号表单要求用户只能输入11位的数字 (匹配)
+*   过滤掉页面内容中的一些敏感词(替换)，或从字符串中获取我们想要的特定部分(提取)等
+
+### 正则基本使用
+
+1.  定义规则
+
+    ```JavaScript
+    const reg =  /表达式/
+    ```
+
+    *   其中`/   /`是正则表达式字面量
+    *   正则表达式也是`对象 `
+
+2.  使用正则
+
+    *   `test()方法`   用来查看正则表达式与指定的字符串是否匹配
+    *   如果正则表达式与指定的字符串匹配 ，返回`true`，否则`false`
+
+```html
+<body>
+  <script>
+    // 正则表达式的基本使用
+    const str = 'web前端开发'
+    // 1. 定义规则
+    const reg = /web/
+
+    // 2. 使用正则  test()
+    console.log(reg.test(str))  // true  如果符合规则匹配上则返回true
+    console.log(reg.test('java开发'))  // false  如果不符合规则匹配上则返回 false
+  </script>
+</body>
+```
+
+`exec() 方法` 在一个指定字符串中执行一个搜索匹配，检索（查找）符合规则的字符串。
+如果找到了，返回一个数组，否则返回null
+
+```html
+<body>
+  <script>
+    // 正则表达式的基本使用
+    const str = 'IT培训, web前端开发, IT培训课程,Java培训'
+    // 1. 定义规则
+    const reg = /前端/
+
+    // 2. 使用正则  exec()
+    console.log(reg.exec(str))  // 返回数组
+    //['前端', index: 9, input: 'IT培训, web前端开发, IT培训课程,Java培训', groups: undefined]
+    console.log(reg.test('java开发'))  // null
+  </script>
+</body>
+```
+
+### 元字符
+
+1.  **普通字符:**
+
+*   大多数的字符仅能够描述它们本身，这些字符称作普通字符，例如所有的字母和数字。
+*   普通字符只能够匹配字符串中与它们相同的字符。
+*   比如，规定用户只能输入英文26个英文字母，普通字符的话  /\[abcdefghijklmnopqrstuvwxyz]/
+
+2.  **元字符(特殊字符）**
+
+*   是一些具有特殊含义的字符，可以极大提高了灵活性和强大的匹配功能。
+*   比如，规定用户只能输入英文26个英文字母，换成元字符写法： /\[a-z]/
+
+元字符可以分为
+
+*   边界符（表示位置，开头和结尾，必须用什么开头，用什么结尾）
+*   量词 （表示重复次数）
+*   字符类 （比如 \d 表示 0\~9）
+
+#### 边界符
+
+正则表达式中的边界符（位置符）用来提示字符所处的位置，主要有两个字符
+
+| 边界符 | 说明              |
+| --- | --------------- |
+| \^  | 表示匹配行首的文本（以谁开始） |
+| \$  | 表示匹配行尾的文本（以谁结束） |
+
+> 如果 ^ 和 \$ 在一起，表示必须是精确匹配
+
+```html
+<body>
+  <script>
+    // 元字符之边界符
+    // 1. 匹配开头的位置 ^
+    const reg = /^web/
+    console.log(reg.test('web前端'))  // true
+    console.log(reg.test('前端web'))  // false
+    console.log(reg.test('前端web学习'))  // false
+    console.log(reg.test('we'))  // false
+
+    // 2. 匹配结束的位置 $
+    const reg1 = /web$/
+    console.log(reg1.test('web前端'))  //  false
+    console.log(reg1.test('前端web'))  // true
+    console.log(reg1.test('前端web学习'))  // false
+    console.log(reg1.test('we'))  // false  
+
+    // 3. 精确匹配 ^ $
+    const reg2 = /^web$/
+    console.log(reg2.test('web前端'))  //  false
+    console.log(reg2.test('前端web'))  // false
+    console.log(reg2.test('前端web学习'))  // false
+    console.log(reg2.test('we'))  // false 
+    console.log(reg2.test('web'))  // true
+    console.log(reg2.test('webweb'))  // flase 
+  </script>
+</body>
+```
+
+#### 量词
+
+量词用来设定某个模式重复次数
+
+| 量词    | 说明       |
+| ----- | -------- |
+| \*    | 重复零次或更多次 |
+| +     | 重复一次或更多次 |
+| ？     | 重复零次或一次  |
+| {n}   | 重复n次     |
+| {n,}  | 重复n次或更多次 |
+| {n,m} | 重复n到m次   |
+
+> 注意： 逗号左右两侧千万不要出现空格
+
+```html
+<body>
+  <script>
+    // 元字符之量词
+    // 1. * 重复次数 >= 0 次
+    const reg1 = /^w*$/
+    console.log(reg1.test(''))  // true
+    console.log(reg1.test('w'))  // true
+    console.log(reg1.test('ww'))  // true
+    console.log('-----------------------')
+
+    // 2. + 重复次数 >= 1 次
+    const reg2 = /^w+$/
+    console.log(reg2.test(''))  // false
+    console.log(reg2.test('w'))  // true
+    console.log(reg2.test('ww'))  // true
+    console.log('-----------------------')
+
+    // 3. ? 重复次数  0 || 1 
+    const reg3 = /^w?$/
+    console.log(reg3.test(''))  // true
+    console.log(reg3.test('w'))  // true
+    console.log(reg3.test('ww'))  // false
+    console.log('-----------------------')
+
+
+    // 4. {n} 重复 n 次
+    const reg4 = /^w{3}$/
+    console.log(reg4.test(''))  // false
+    console.log(reg4.test('w'))  // flase
+    console.log(reg4.test('ww'))  // false
+    console.log(reg4.test('www'))  // true
+    console.log(reg4.test('wwww'))  // false
+    console.log('-----------------------')
+
+    // 5. {n,} 重复次数 >= n 
+    const reg5 = /^w{2,}$/
+    console.log(reg5.test(''))  // false
+    console.log(reg5.test('w'))  // false
+    console.log(reg5.test('ww'))  // true
+    console.log(reg5.test('www'))  // true
+    console.log('-----------------------')
+
+    // 6. {n,m}   n =< 重复次数 <= m
+    const reg6 = /^w{2,4}$/
+    console.log(reg6.test('w'))  // false
+    console.log(reg6.test('ww'))  // true
+    console.log(reg6.test('www'))  // true
+    console.log(reg6.test('wwww'))  // true
+    console.log(reg6.test('wwwww'))  // false
+    
+    // 7. 注意事项： 逗号两侧千万不要加空格否则会匹配失败
+
+  </script>
+```
+
+#### 范围
+
+表示字符的范围，定义的规则限定在某个范围，比如只能是英文字母，或者数字等等，用 `[]` 表示范围
+
+| 量词        | 说明                       |
+| --------- | ------------------------ |
+| \[abc]    | 匹配abc其中的任何单个字符，多选一       |
+| \[a-zA-Z] | 匹配26个大小写英文字母其中的任何单个字符    |
+| \[\^a-z]  | 匹配除了26个小写英文字母之外的其他任何单个字符 |
+
+qq号匹配（从10000开始） `/^[1-9][0-9]{4,}$/`
+
+```html
+<body>
+  <script>
+    // 元字符之范围  []  
+    // 1. [abc] 匹配包含的单个字符， 多选1
+    console.log(/[abc].test('andy')/) //true
+    console.log(/[abc].test('baby')/) //true
+    
+    const reg1 = /^[abc]$/
+    console.log(reg1.test('a'))  // true
+    console.log(reg1.test('b'))  // true
+    console.log(reg1.test('c'))  // true
+    console.log(reg1.test('d'))  // false
+    console.log(reg1.test('ab'))  // false
+
+    // 2. [a-z] 连字符 单个
+    const reg2 = /^[a-z]$/
+    console.log(reg2.test('a'))  // true
+    console.log(reg2.test('p'))  // true
+    console.log(reg2.test('0'))  // false
+    console.log(reg2.test('A'))  // false
+    // 想要包含小写字母，大写字母 ，数字
+    const reg3 = /^[a-zA-Z0-9]$/
+    console.log(reg3.test('B'))  // true
+    console.log(reg3.test('b'))  // true
+    console.log(reg3.test(9))  // true
+    console.log(reg3.test(','))  // flase
+
+    // 用户名可以输入英文字母，数字，可以加下划线，要求 6~16位
+    const reg4 = /^[a-zA-Z0-9_]{6,16}$/
+    console.log(reg4.test('abcd1'))  // false 
+    console.log(reg4.test('abcd12'))  // true
+    console.log(reg4.test('ABcd12'))  // true
+    console.log(reg4.test('ABcd12_'))  // true
+
+    // 3. [^a-z] 取反符，匹配除了小写字母以外的字符
+    const reg5 = /^[^a-z]$/
+    console.log(reg5.test('a'))  // false 
+    console.log(reg5.test('A'))  // true
+    console.log(reg5.test(8))  // true
+
+  </script>
+</body>
+```
+
+#### 字符类
+
+**预定义：** 某些常见模式的简写方式，区分字母和数字
+
+| 预定类 | 说明                                     |
+| --- | -------------------------------------- |
+| \d  | 匹配0-9之间的任一数字，相当于\[0-9]                 |
+| \D  | 匹配0-9以外的字符，相当于\[\^0-9]                 |
+| \w  | 匹配任意的字母、数字和下划线，相当于\[a-zA-Z0-9\_]       |
+| \W  | 除所有的字母、数字和下划线以外的字符，相当于\[\^a-zA-Z0-9\_] |
+| \s  | 匹配空格（包括换行符、制表符、空格符等），相当于\[\t\r\n\v\f]  |
+| \S  | 匹配非空格的字符，相当于\[\^\t\r\n\v\f]            |
+
+日期格式： `^\d{4}-\d{1,2}-\d{1,2}`
+
+## 替换和修饰符
+
+replace 替换方法，可以完成字符的替换
+
+```html
+<body>
+  <script>
+    // 替换和修饰符
+    const str = '欢迎大家学习前端，相信大家一定能学好前端，都成为前端大神'
+    // 1. 替换  replace  需求：把前端替换为 web
+    // 1.1 replace 返回值是替换完毕的字符串
+    // const strEnd = str.replace(/前端/, 'web') 只能替换一个
+  </script>
+</body>
+```
+
+修饰符约束正则执行的某些细节行为，如是否区分大小写、是否支持多行匹配等
+
+*   `i` 是单词 ignore 的缩写，正则匹配时字母不区分大小写
+*   `g` 是单词 global 的缩写，匹配所有满足正则表达式的结果
+
+```html
+<body>
+  <script>
+    // 替换和修饰符
+    const str = '欢迎大家学习前端，相信大家一定能学好前端，都成为前端大神'
+    // 1. 替换  replace  需求：把前端替换为 web
+    // 1.1 replace 返回值是替换完毕的字符串
+    // const strEnd = str.replace(/前端/, 'web') 只能替换一个
+
+    // 2. 修饰符 g 全部替换
+    const strEnd = str.replace(/前端/g, 'web')
+    console.log(strEnd) 
+    
+    console.log(/a/i.test('A')) //true
+  </script>
+</body>
+```
+
+## change 事件
+
+给input注册 change 事件，值被修改并且失去焦点后触发
+
+## 判断是否有类
+
+元素.classList.contains() 看看有没有包含某个类，如果有则返回true，么有则返回false
+
+# Web APIs - 第7天综合案例
+
+## 鼠标在商品图片上出现放大镜效果
+
+首先给小盒子添加鼠标移动到哪个哪个就有不同的显示效果的功能，同时更改中盒子和大盒子的图片，实现对应图片的展示。
+
+```js
+    // 1. 获取三个盒子
+    // 2. 小盒子 图片切换效果
+    const small = document.querySelector('.small')
+    //  中盒子
+    const middle = document.querySelector('.middle')
+    //  大盒子
+    const large = document.querySelector('.large')
+    // 2. 事件委托
+
+    //mouseover 有冒泡，mouseenter没有冒泡
+    small.addEventListener('mouseover', function (e) {
+      if (e.target.tagName === 'IMG') {
+        // console.log(111)
+        // 排他 干掉以前的 active  li 上面
+        this.querySelector('.active').classList.remove('active')
+        // 当前元素的爸爸添加 active
+        e.target.parentNode.classList.add('active')
+        // 拿到当前小图片的 src
+        // console.log(e.target.src)
+        // 让中等盒子里面的图片，src 更换为   小图片src
+        middle.querySelector('img').src = e.target.src
+        // 大盒子更换背景图片
+        large.style.backgroundImage = `url(${e.target.src})`
+      }
+    })
+
+```
+
+接下来实现放大镜效果，鼠标经过中等盒子， 显示隐藏 大盒子，鼠标经过大盒子，也会显示大盒子。
+
+*   难点：
+
+使用了延时器实现鼠标移出2秒后大盒子消失，但当用户快速移入移出中等盒子时，会出现大盒子不再显示的bug，这是因为每一次鼠标移出都开了一个定时器，多个定时器导致鼠标移入时无法立即显示大盒子。
+
+*   解决方法： 只开一个定时器，鼠标移入时先清除定时器
+
+```js
+    // 3. 鼠标经过中等盒子， 显示隐藏 大盒子
+    middle.addEventListener('mouseenter', show)
+    middle.addEventListener('mouseleave', hide)
+    let timeId = null
+    // 显示函数 显示大盒子
+    function show() {
+      // 先清除定时器
+      clearTimeout(timeId)
+      large.style.display = 'block'
+    }
+    // 隐藏函数 隐藏大盒子
+    //鼠标离开不会立马消失，而是有200ms的延时
+    function hide() {
+      timeId = setTimeout(function () {
+        large.style.display = 'none'
+      }, 200)
+    }
+
+
+    // 4. 鼠标经过大盒子， 显示隐藏 大盒子
+    large.addEventListener('mouseenter', show)
+    large.addEventListener('mouseleave', hide)
+   
+```
+
+最后鼠标在中盒子上移动时还会显示一个黑色的遮罩层
+
+`getBoundingClientRect().left()` 与 `offectLeft` 的区别是，`offectLeft`会受有定位的父元素的影响。
+
+*   难点：
+
+1.  鼠标在middle 盒子里面的坐标 = 鼠标在页面中的坐标 - middle 中等盒子的坐标； 但y轴的坐标会受到滚动条的影响，因为`getBoundingClientRect().top()` 是到可视窗口顶部的距离，需要多剪一块头部被卷去的距离。
+2.  黑色遮罩层需要限制它移动的距离，即0 - 400
+3.  黑色盒子不是一直在移动的，当盒子在最左边鼠标还未移动到盒子的一半（x<100）或者在最右边而鼠标已经移动到盒子的一半时（x>300）,盒子不需要移动
+4.  当x = 100时，如果直接让黑色盒子的x坐标等于100，盒子相当于直接从0移动到100的位置，会有些突兀，因此要等于x-100；当x = 300时，此时x表示鼠标的位置，即黑色盒子的中间，因此给黑色盒子x坐标赋值200；
+5.  当鼠标在中等盒子上移动时，大盒子要通过设置背景图片的position来移动图片，此时图片的移动方向应该和 鼠标移动的方向刚好相反。
+
+
+
+```js
+    // 5. 鼠标经过中等盒子，显示隐藏 黑色遮罩层
+    const layer = document.querySelector('.layer')
+    middle.addEventListener('mouseenter', function () {
+      layer.style.display = 'block'
+    })
+    middle.addEventListener('mouseleave', function () {
+      layer.style.display = 'none'
+    })
+    
+ // 6.移动黑色遮罩盒子
+    middle.addEventListener('mousemove', function (e) {
+      // let x = 10, y = 20
+      // console.log(11)
+      // 鼠标在middle 盒子里面的坐标 = 鼠标在页面中的坐标 - middle 中等盒子的坐标
+      // console.log(e.pageX)鼠标在页面中的坐标
+      // middle 中等盒子的坐标
+      // console.log(middle.getBoundingClientRect().left)
+      let x = e.pageX - middle.getBoundingClientRect().left
+      let y = e.pageY - middle.getBoundingClientRect().top - document.documentElement.scrollTop
+      // console.log(x, y)
+      // 黑色遮罩移动 在 middle 盒子内 限定移动的距离
+      if (x >= 0 && x <= 400 && y >= 0 && y <= 400) {
+        // 黑色盒子不是一直移动的
+        // 声明2个变量 黑色盒子移动的 mx my变量 
+        let mx = 0, my = 0
+        if (x < 100) mx = 0
+        if (x >= 100 && x <= 300) mx = x - 100
+        if (x > 300) mx = 200
+
+        if (y < 100) my = 0
+        if (y >= 100 && y <= 300) my = y - 100
+        if (y > 300) my = 200
+
+        layer.style.left = mx + 'px'
+        layer.style.top = my + 'px'
+        // 大盒子的背景图片要跟随 中等盒子移动  存在的关系是 2倍   
+        large.style.backgroundPositionX = -2 * mx + 'px'
+        large.style.backgroundPositionY = -2 * my + 'px'
+      }
+    })
+```
