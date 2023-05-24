@@ -1664,3 +1664,647 @@ const total = arr.reduce((prev, current) => prev + current, 10)
 ⑤ \_\_proto\_\_对象原型的意义就在于为对象成员查找机制提供一个方向，或者说一条路线
 
 ⑥ 可以使用 instanceof 运算符用于检测构造函数的 prototype 属性是否出现在某个实例对象的原型链上
+
+# JavaScript 进阶 - 第4天
+
+## 深浅拷贝
+
+### 浅拷贝
+
+首先浅拷贝和深拷贝只针对**引用类型**
+
+浅拷贝：拷贝的是地址
+
+常见方法：
+
+1.  拷贝对象：Object.assgin() / 展开运算符 {...obj} 拷贝对象
+2.  拷贝数组：Array.prototype.concat() 或者 \[...arr]
+
+> 如果是简单数据类型拷贝值，引用数据类型拷贝的是地址 (简单理解： 如果是单层对象，没问题，如果有多层就有问题)
+
+```js
+    const obj = {
+        uname: 'pink',
+        age: 18
+    }
+    const o = {... obj}
+    console.log(o) 
+    o.age = 20
+    console.log(o.age) // 20
+    console.log(obj.age) // 18
+```
+
+#### 浅拷贝的问题
+
+遇到深层对象时，只拷贝地址
+
+```js
+    const obj = {
+        uname: 'pink',
+        age: 18,
+        family: {
+            baby: 'little pink'
+        }
+    }
+    const o = {... obj}
+    console.log(o) 
+    o.family.baby = 'baby'
+    console.log(o.family.baby) // 'baby'
+    console.log(obj.family.baby) // 'baby' 
+```
+
+### 深拷贝
+
+首先浅拷贝和深拷贝只针对引用类型
+
+深拷贝：拷贝的是对象，不是地址
+
+常见方法：
+
+1.  通过递归实现深拷贝
+2.  lodash/cloneDeep
+3.  通过JSON.stringify()实现
+
+#### 递归实现深拷贝
+
+函数递归：
+
+如果一个函数在内部可以调用其本身，那么这个函数就是递归函数
+
+*   简单理解:函数内部自己调用自己, 这个函数就是递归函数
+*   递归函数的作用和循环效果类似
+*   由于递归很容易发生“栈溢出”错误（stack overflow），所以必须要加退出条件 return
+
+```html
+<body>
+  <script>
+    const obj = {
+      uname: 'pink',
+      age: 18,
+      hobby: ['乒乓球', '足球'],
+      family: {
+        baby: '小pink'
+      }
+    }
+    const o = {}
+    // 拷贝函数
+    function deepCopy(newObj, oldObj) {
+      debugger
+      for (let k in oldObj) {
+        // 处理数组的问题  一定先写数组 在写 对象 不能颠倒
+        if (oldObj[k] instanceof Array) {
+          newObj[k] = []
+          //  newObj[k] 接收 []  hobby
+          //  oldObj[k]   ['乒乓球', '足球']
+          deepCopy(newObj[k], oldObj[k])
+        } else if (oldObj[k] instanceof Object) {
+          newObj[k] = {}
+          deepCopy(newObj[k], oldObj[k])
+        }
+        else {
+          //  k  属性名 uname age    oldObj[k]  属性值  18
+          // newObj[k]  === o.uname  给新对象添加属性
+          newObj[k] = oldObj[k]
+        }
+      }
+    }
+    deepCopy(o, obj) // 函数调用  两个参数 o 新对象  obj 旧对象
+    console.log(o)
+    o.age = 20
+    o.hobby[0] = '篮球'
+    o.family.baby = '老pink'
+    console.log(obj)
+    console.log([1, 23] instanceof Object)
+    // 复习
+    // const obj = {
+    //   uname: 'pink',
+    //   age: 18,
+    //   hobby: ['乒乓球', '足球']
+    // }
+    // function deepCopy({ }, oldObj) {
+    //   // k 属性名  oldObj[k] 属性值
+    //   for (let k in oldObj) {
+    //     // 处理数组的问题   k 变量
+    //     newObj[k] = oldObj[k]
+    //     // o.uname = 'pink'
+    //     // newObj.k  = 'pink'
+    //   }
+    // }
+  </script>
+</body>
+```
+
+#### js库lodash里面cloneDeep内部实现了深拷贝
+
+```html
+<body>
+  <!-- 先引用 -->
+  <script src="./lodash.min.js"></script>
+  <script>
+    const obj = {
+      uname: 'pink',
+      age: 18,
+      hobby: ['乒乓球', '足球'],
+      family: {
+        baby: '小pink'
+      }
+    }
+    const o = _.cloneDeep(obj)
+    console.log(o)
+    o.family.baby = '老pink'
+    console.log(obj)
+  </script>
+</body>
+```
+
+#### JSON序列化
+
+```html
+<body>
+  <script>
+    const obj = {
+      uname: 'pink',
+      age: 18,
+      hobby: ['乒乓球', '足球'],
+      family: {
+        baby: '小pink'
+      }
+    }
+    // 把对象转换为 JSON 字符串
+    // console.log(JSON.stringify(obj))
+    const o = JSON.parse(JSON.stringify(obj))
+    console.log(o)
+    o.family.baby = '123'
+    console.log(obj)
+  </script>
+</body>
+```
+
+## 异常处理
+
+> 了解 JavaScript 中程序异常处理的方法，提升代码运行的健壮性。
+
+### throw
+
+异常处理是指预估代码执行过程中可能发生的错误，然后最大程度的避免错误的发生导致整个程序无法继续运行
+
+总结：
+
+1.  throw 抛出异常信息，程序也会终止执行
+2.  throw 后面跟的是错误提示信息
+3.  Error 对象配合 throw 使用，能够设置更详细的错误信息
+
+```html
+<script>
+  function counter(x, y) {
+
+    if(!x || !y) {
+      // throw '参数不能为空!';
+      throw new Error('参数不能为空!')
+    }
+
+    return x + y
+  }
+
+  counter()
+</script>
+```
+
+总结：
+
+1.  `throw` 抛出异常信息，程序也会终止执行
+2.  `throw` 后面跟的是错误提示信息
+3.  `Error` 对象配合 `throw` 使用，能够设置更详细的错误信息
+
+### try ... catch
+
+```html
+<script>
+   function foo() {
+      try {
+        // 查找 DOM 节点
+        const p = document.querySelector('.p')
+        p.style.color = 'red'
+      } catch (error) {
+        // try 代码段中执行有错误时，会执行 catch 代码段
+        // 查看错误信息
+        console.log(error.message)
+        // 终止代码继续执行
+        return
+
+      }
+      finally {
+          alert('执行')
+      }
+      console.log('如果出现错误，我的语句不会执行')
+    }
+    foo()
+</script>
+```
+
+总结：
+
+1.  `try...catch` 用于捕获错误信息，不中断程序， `catch` 之后的代码还是会执行
+2.  将预估可能发生错误的代码写在 `try` 代码段中
+3.  如果 `try` 代码段中出现错误后，会执行 `catch` 代码段，并截获到错误信息
+4.  `finally` 不管是否有错误，都一定会执行的代码
+
+### debugger
+
+相当于断点调试
+
+## 处理this
+
+> 了解函数中 this 在不同场景下的默认值，知道动态指定函数 this 值的方法。
+
+`this` 是 JavaScript 最具“魅惑”的知识点，不同的应用场合 `this` 的取值可能会有意想不到的结果，在此我们对以往学习过的关于【 `this` 默认的取值】情况进行归纳和总结。
+
+### 普通函数
+
+**普通函数**的调用方式决定了 `this` 的值，即【谁调用 `this` 的值指向谁】，如下代码所示：
+
+```html
+<script>
+  // 普通函数
+  function sayHi() {
+    console.log(this)  
+  }
+  // 函数表达式
+  const sayHello = function () {
+    console.log(this)
+  }
+  // 函数的调用方式决定了 this 的值
+  sayHi() // window
+  window.sayHi()
+	
+
+// 普通对象
+  const user = {
+    name: '小明',
+    walk: function () {
+      console.log(this)
+    }
+  }
+  // 动态为 user 添加方法
+  user.sayHi = sayHi
+  uesr.sayHello = sayHello
+  // 函数调用方式，决定了 this 的值
+  user.sayHi()
+  user.sayHello()
+</script>
+```
+
+注： 普通函数没有明确调用者时 `this` 值为 `window`，严格模式下没有调用者时 `this` 的值为 `undefined`。（严格模式 在代码最前面加上'use strict'）
+
+### 箭头函数
+
+1.  **箭头函数**中的 `this` 与普通函数完全不同，也不受调用方式的影响，事实上箭头函数中并不存在 `this` ！
+2.  箭头函数中访问的 `this` 不过是箭头函数所在作用域的 `this` 变量。箭头函数中的this引用的就是最近作用域中的this
+3.  向外层作用域中，一层一层查找`this`，直到有 `this`的定义
+
+```html
+<script>
+    
+  console.log(this) // 此处为 window
+  // 箭头函数
+  const sayHi = function() {
+    console.log(this) // 该箭头函数中的 this 为函数声明环境中 this 一致
+  }
+  // 普通对象
+  const user = {
+    name: '小明',
+    // 该箭头函数中的 this 为函数声明环境中 this 一致
+    walk: () => {
+      console.log(this)
+    },
+    
+    sleep: function () {
+      let str = 'hello'
+      console.log(this)
+      let fn = () => {
+        console.log(str)
+        console.log(this) // 该箭头函数中的 this 与 sleep 中的 this 一致
+      }
+      // 调用箭头函数
+      fn();
+    }
+  }
+
+  // 动态添加方法
+  user.sayHi = sayHi
+  
+  // 函数调用
+  user.sayHi() // user
+  user.sleep() // user
+  user.walk() // window
+</script>
+```
+
+在开发中【使用箭头函数前需要考虑函数中 `this` 的值】，**事件回调函数**使用箭头函数时，`this` 为全局的 `window`，因此DOM事件回调函数不推荐使用箭头函数，如下代码所示：
+
+```html
+<script>
+  // DOM 节点
+  const btn = document.querySelector('.btn')
+  // 箭头函数 此时 this 指向了 window
+  btn.addEventListener('click', () => {
+    console.log(this)
+  })
+  // 普通函数 此时 this 指向了 DOM 对象
+  btn.addEventListener('click', function () {
+    console.log(this)
+  })
+</script>
+```
+
+同样由于箭头函数 `this` 的原因，**基于原型的面向对象也不推荐采用箭头函数**，如下代码所示：
+
+```html
+<script>
+  function Person() {
+  }
+  // 原型对像上添加了箭头函数
+  Person.prototype.walk = () => {
+    console.log('人都要走路...')
+    console.log(this); // window
+  }
+  const p1 = new Person()
+  p1.walk()
+</script>
+```
+
+### 改变this指向
+
+以上归纳了普通函数和箭头函数中关于 `this` 默认值的情形，不仅如此 JavaScript 中还允许指定函数中 `this` 的指向，有 3 个方法可以动态指定普通函数中 `this` 的指向：
+
+#### call
+
+使用 `call` 方法调用函数，同时指定函数中 `this` 的值，使用方法如下代码所示：
+
+```html
+<script>
+  // 普通函数
+  function sayHi() {
+    console.log(this);
+  }
+
+  let user = {
+    name: '小明',
+    age: 18
+  }
+
+  let student = {
+    name: '小红',
+    age: 16
+  }
+
+  // 调用函数并指定 this 的值
+  sayHi.call(user); // this 值为 user
+  sayHi.call(student); // this 值为 student
+
+  // 求和函数
+  function counter(x, y) {
+    return x + y;
+  }
+
+  // 调用 counter 函数，并传入参数
+  let result = counter.call(null, 5, 10);
+  console.log(result);
+</script>
+```
+
+总结：
+
+1.  `call` 方法能够在调用函数的同时指定 `this` 的值
+2.  使用 `call` 方法调用函数时，第1个参数为 `this` 指定的值
+3.  `call` 方法的其余参数会依次自动传入函数做为函数的参数
+
+#### apply
+
+使用 `apply` 方法**调用函数**，同时指定函数中 `this` 的值，使用方法如下代码所示：
+
+```html
+<script>
+  // 普通函数
+  function sayHi() {
+    console.log(this)
+  }
+
+  let user = {
+    name: '小明',
+    age: 18
+  }
+
+  let student = {
+    name: '小红',
+    age: 16
+  }
+
+  // 调用函数并指定 this 的值
+  sayHi.apply(user) // this 值为 user
+  sayHi.apply(student) // this 值为 student
+
+  // 求和函数
+  function counter(x, y) {
+    return x + y
+  }
+  // 调用 counter 函数，并传入参数
+  let result = counter.apply(null, [5, 10])
+  console.log(result)
+</script>
+```
+
+总结：
+
+1.  `apply` 方法能够在调用函数的同时指定 `this` 的值
+2.  使用 `apply` 方法调用函数时，第1个参数为 `this` 指定的值
+3.  `apply` 方法第2个参数为数组，数组的单元值依次自动传入函数做为函数的参数
+
+#### bind
+
+`bind` 方法并**不会调用函数**，而是创建一个指定了 `this` 值的新函数，使用方法如下代码所示：
+
+```html
+<script>
+  // 普通函数
+  function sayHi() {
+    console.log(this)
+  }
+  let user = {
+    name: '小明',
+    age: 18
+  }
+  // 调用 bind 指定 this 的值
+  let sayHello = sayHi.bind(user);
+  // 调用使用 bind 创建的新函数
+  sayHello()
+</script>
+```
+
+注：`bind` 方法创建新的函数，与原函数的唯一的变化是改变了 `this` 的值。因此当我们只是想改变 `this` 指向，不想调用函数时，可以使用 `bind` 方法。
+
+```js
+  const btn = document.querySelector('.btn')
+  // 箭头函数 此时 this 指向了 window
+  btn.addEventListener('click', function() {
+    this.disabled = true
+    setTimeout(function(){
+        this.disabled = false //没有效果，因为setTimeout是被window调用的
+    }.bind(this), 2000) //与btn绑定后，this.disabled = false 就有效果了
+  })
+```
+
+## 防抖节流
+
+### 防抖（debounce）
+
+所谓防抖，就是指触发事件后在 n 秒内函数只能执行一次，如果在 n 秒内又触发了事件，则会重新计算函数执行时间（**单位时间内，频繁触发事件，只执行最后一次**）
+
+举例：王者荣耀回城，只要被打断就需要重新来
+
+使用场景：
+
+*   搜索框搜索输入，只需用户最后一次输入完，再发送请求
+*   手机号、邮箱验证输入检测
+
+#### ladash中的防抖函数——debounce
+
+```js
+    const box = document.querySelector('.box')
+    let i = 1
+    function mouseMove (){
+        box.innerHTML  = i++
+    }
+    //利用lodash库实现防抖
+    // 语法： _.debounce(fun, 时间)
+    box.addEventListener('mouseMove', _.debounce(mouseMove, 500))
+```
+
+#### 手写防抖函数
+
+1.  声明一个定时器，当鼠标每次滑动都先判断是否有定时器，如果有定时器先清除以前的定时器
+2.  如果没有定时器则开启定时器，存到变量当中
+3.  在定时器中调用要执行的函数
+
+```js
+    const box = document.querySelector('.box')
+    let i = 1  // 让这个变量++
+    // 鼠标移动函数
+    function mouseMove() {
+      box.innerHTML = ++i
+      // 如果里面存在大量操作 dom 的情况，可能会卡顿
+    }
+    // 防抖函数
+    function debounce(fn, t) {
+      let timeId
+      return function () {  //必须要返回一个定时函数，这样才能多次执行
+        // 如果有定时器就清除
+        if (timeId) clearTimeout(timeId)
+        // 开启定时器 200
+        timeId = setTimeout(function () {
+          fn()
+        }, t)
+      }
+    }
+    // box.addEventListener('mousemove', mouseMove)
+    box.addEventListener('mousemove', debounce(mouseMove, 200))
+```
+
+### 节流（throttle）
+
+所谓节流，就是指连续触发事件但是在 n 秒中只执行一次函数 （ **单位时间内，频繁触发事件，只执行一次** ）
+
+触发事件，开始执行，如果单位时间内再次被触发，之前已有，取消本次。
+
+举例： 王者荣耀技能冷却，期间无法继续释放技能
+
+使用场景： 高频事件：页面尺寸缩放 `resize` ，鼠标移动， 滚动条滚动等
+
+案例：鼠标在盒子上移动，不管移动多少次，每隔500ms 才加1
+
+#### ladash中的节流函数——throttle
+
+```js
+    const box = document.querySelector('.box')
+    let i = 1  // 让这个变量++
+    // 鼠标移动函数
+    function mouseMove() {
+      box.innerHTML = ++i
+      // 如果里面存在大量操作 dom 的情况，可能会卡顿
+    }
+    
+    // 语法：  _.throttle(fun, 时间)
+    box.addEventListener('mousemove', _.throttle(mouseMove, 500))
+```
+
+#### 手写节流函数
+
+1.  声明一个定时器变量
+2.  当鼠标滑动时判断是否有定时器，如果有定时器则**不开启**新的定时器；
+3.  如果没有定时器则开启定时器，记得存到变量里面
+    *   定时器里面调用要执行的函数
+    *   定时器里面要清空定时器（不使用clearTimeout(timeId)，而要用 timeId = null，因为开启的定时器里面不能清空计时器，应该直接将id置为空）
+
+```js
+const box = document.querySelector('.box')
+let i = 1  
+function mouseMove() {
+  box.innerHTML = ++i
+}
+
+function throttle(fn, t){
+    let timeId = null
+    return function(){
+        if(!timId){
+            timeId = setTimeout(function(){
+                fn()
+                timeId = null // 
+            }, t)            
+        }
+    }
+}
+box.addEventListener('mousemove', throttle(mouseMove, 500))
+```
+
+### 总结
+
+| 性能优化 | 说明                       | 使用场景                               |
+| ---- | ------------------------ | ---------------------------------- |
+| 防抖   | 单位时间内，频繁触发事件，只执行**最后一次** | 搜索框输入、手机号邮箱验证输入                    |
+| 节流   | 单位时间内，频繁触发事件，只执行**一次**   | 高频事件：页面尺寸缩放 `resize` ，鼠标移动， 滚动条滚动等 |
+
+## 综合案例
+
+### 案例要求
+页面打开，可以记录上一次的视频播放位置
+
+`ontimeupdate` 事件在视频/音频当前的播放位置发生改变时触发
+`onloadeddata` 事件在当前帧的数据加载完成且还没有足够的数据播放视频/音频的下一帧时触发
+
+`ontimeupdate`触发频次太高了，需要节流，设置一秒钟触发一次
+
+### 思路
+
+1. 在 `ontimeupdate` 事件触发的时候，每隔1秒钟，就记录当前时间到本地存储
+
+2. 下次打开页面， `onloadeddata` 事件触发，就可以从本地存储取出时间，让视频从取出的时间播放，如果没有就默认为0s
+
+3. 获得当前时间 video.currentTime
+
+
+```js
+    // 1. 获取元素  要对视频进行操作
+    const video = document.querySelector('video')
+    video.ontimeupdate = _.throttle(() => {
+      // console.log(video.currentTime) 获得当前的视频时间
+      // 把当前的时间存储到本地存储
+      localStorage.setItem('currentTime', video.currentTime)
+    }, 1000)
+
+    // 打开页面触发事件，就从本地存储里面取出记录的时间， 赋值给  video.currentTime
+    video.onloadeddata = () => {
+      // console.log(111)
+      video.currentTime = localStorage.getItem('currentTime') || 0
+    }
+```
+
