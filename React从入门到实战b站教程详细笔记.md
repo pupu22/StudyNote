@@ -5,6 +5,34 @@
 > 说个题外话\
 > 这个视频作者提供了语雀上面的文档，但是我需要markdown格式的笔记，因此花了两个小时研究怎么把网页里面的内容转换为markdown格式，尝试了cubox+ copy as markdown 以及印象笔记，还有各种将html文件转换为markdown的工具，最后发现复制到掘金里面就可以转换格式，太离谱了。
 
+# React介绍
+
+`目标任务:`  了解什么是React以及它的特点
+
+**React是什么**
+
+    一个专注于构建用户界面的 JavaScript 库，和vue和angular并称前端三大框架，不夸张的说，react引领了很多新思想，世界范围内是最流行的js前端框架，最新版本已经到了18，加入了许多很棒的新特性
+
+React英文文档（<https://reactjs.org/）>
+
+React中文文档 （<https://zh-hans.reactjs.org/）>
+
+React新文档（<https://beta.reactjs.org/）（开发中....）>
+
+**React有什么特点**
+
+1- 声明式UI（JSX）
+
+写UI就和写普通的HTML一样，抛弃命令式的繁琐实现
+
+2- 组件化
+
+组件是react中最重要的内容，组件可以通过搭积木的方式拼成一个完整的页面，通过组件的抽象可以增加复用能力和提高可维护性
+
+3- 跨平台
+
+react既可以开发web应用也可以使用同样的语法开发原生应用（react-native），比如安卓和ios应用，甚至可以使用react开发VR应用，想象力空间十足，react更像是一个 `元框架`  为各种领域赋能
+
 # JSX基础
 
 ## 1. JSX介绍
@@ -310,7 +338,7 @@ function HelloFn () {
 
 ### 3. 传递额外参数
 
-解决思路: 改造事件绑定为箭头函数 在箭头函数中完成参数的传递
+解决思路: 改造事件绑定为**箭头函数** 在箭头函数中完成参数的传递
 
 ```js
 import React from "react"
@@ -359,22 +387,24 @@ export default App
 
 类组件中的事件绑定，整体的方式和函数组件差别不大
 
-唯一需要注意的 因为处于class类语境下 所以定义事件回调函数以及定它写法上有不同
+唯一需要注意的 因为处于class类语境下 所以定义事件回调函数以及它写法上有不同
 
 1.  定义的时候: class Fields语法
 
 2.  使用的时候: 需要借助this关键词获取
 
+3.  回调函数必须要用 **箭头函数**
+
 ```js
 import React from "react"
 class CComponent extends React.Component {
-  // class Fields
+  // class Fields 写法，推荐这样写
   clickHandler = (e, num) => {
     // 这里的this指向的是正确的当前的组件实例对象 
     // 可以非常方便的通过this关键词拿到组件实例身上的其他属性或者方法
     console.log(this)
   }
-
+  // 错误写法
   clickHandler1 () {
     // 这里的this 不指向当前的组件实例对象而指向undefined 存在this丢失问题
     console.log(this)
@@ -482,6 +512,46 @@ class Counter extends React.Component {
 
 必须谨慎对待回调函数中的this，在JavaScript中，class的方法默认不会绑定this，如果你忘记绑定this.handleClick并把它传入了onClick，当你调用这个函数的时候this的值为undefined。通常情况下，如果你没有在方法后面添加`()`,例如`onClick={this.handleClick}`，你应该为这个方法绑定this。
 
+*   回调函数不使用箭头函数时，可以在 `constructor`中使用bind进行修正
+
+```js
+import React from "react"
+class CComponent extends React.Component {
+    
+  constructor(){
+    super()
+    //使用bind强行修正 this指向
+    // 相当于在类组件初始化的阶段，就可以把回调函数的this 修正到
+    // 永远指向当前组件实例对象
+    this.handler = this.handler.bind(this)
+  }
+  // 错误写法
+  handler () {
+    // 这里的this 不指向当前的组件实例对象而指向undefined 存在this丢失问题
+    console.log(this)
+  }
+  render () {
+    // this函数中的this已经被React内部作了修正，这里的this就是指向当前的组件实例对象
+    console.log(this)
+    return (
+      <div>
+        <button onClick={this.handler}>click me</button>
+        // 如果不使用constructor进行修正，则可以使用以下写法
+        <button onClick={() => this.handler()}>click me</button>
+      </div>
+    )
+  }
+}
+function App () {
+  return (
+    <div>
+      <CComponent />
+    </div>
+  )
+}
+export default App
+```
+
 这里我们作为了解内容，随着js标准的发展，主流的写法已经变成了class fields，无需考虑太多this问题
 
 ## React的状态不可变
@@ -520,13 +590,16 @@ this.state.person.name = 'rose'
 ```js
 this.setState({
     count: this.state.count + 1
-    list: [...this.state.list, 4],
+    //list: [...this.state.list, 4],
+    //删除数组元素 2
+    list: this.state.list.filter(item => item !== 2)
     person: {
        ...this.state.person,
        // 覆盖原来的属性 就可以达到修改对象中属性的目的
        name: 'rose'
     }
 })
+
 ```
 
 ## 表单处理
@@ -605,7 +678,7 @@ class InputComponent extends React.Component {
   msgRef = createRef()
 
   changeHandler = () => {
-    console.log(this.msgRef.current.value)
+    console.log(this.msgRef.current.value) //点击按钮即可获得输入框的值
   }
 
   render() {
@@ -626,6 +699,41 @@ function App () {
   )
 }
 export default App
+```
+
+## 阶段小练习
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7faec25f81a94acea67bfd61dfd2158d~tplv-k3u1fbpfcp-zoom-1.image)
+**练习说明**
+
+1.  拉取项目模板到本地，安装依赖，run起来项目\
+    <https://gitee.com/react-course-series/react-component-demo>
+2.  完成tab点击切换激活状态交互
+3.  完成发表评论功能\
+    注意：生成独一无二的id 可以使用  uuid 包  `yarn add uuid`
+
+### 问题（未解决）
+
+评论框点击提交按钮后，评论输入框中的内容如何清空？\
+直接在提交按钮的回调函数中，将value置为空好像不起作用。
+
+```js
+  //发表评论按钮的回调函数
+  submitComment = ()=>{
+    this.setState({
+      list: [...this.state.list, 
+        {
+          id: uuid(),
+          author: 'author',
+          comment: this.state.comment,
+          time: new Date(),
+          // 1: 点赞 0：无态度 -1:踩
+          attitude: 0
+        }
+      ],
+      comment: '' //这里会把state中的comment置为空，但input里面的value
+    })
+  }
 ```
 
 # React组件通信
@@ -656,8 +764,8 @@ export default App
 
 <!---->
 
-1.  1.  类组件使用this.props获取props对象
-    2.  函数式组件直接通过参数获取props对象
+*   类组件使用this.props获取props对象
+*   函数式组件直接通过参数获取props对象
 
 ```jsx
 import React from 'react'
@@ -737,20 +845,328 @@ class App extends React.Component {
   }
 }
 ```
+
+## props解构
+
+props是一个对象，里面存着通过父组件传入的所有数据，可以进行 **解构赋值**
+
+```jsx
+// 函数式子组件
+function FSon(props) {
+  const {msg, age, isMan, child} = props
+  return (
+    <div>
+      子组件1
+      {msg}
+      {age}
+    </div>
+  )
+}
+
+//也可以直接在组件参数的地方进行解构
+function FSon({msg, age, isMan, child}) {
+  return (
+    <div>
+      子组件1
+      {msg}
+      {age}
+    </div>
+  )
+}
+
+```
+
 ## 子传父实现
 
 `目标任务:`   实现父子通信中的子传父
 
 **口诀：** 父组件给子组件传递回调函数，子组件调用
 
-****
+***
 
 **实现步骤**
 
 1.  父组件提供一个回调函数 - 用于接收数据
-1.  将函数作为属性的值，传给子组件
-1.  子组件通过props调用 回调函数
-1.  将子组件中的数据作为参数传递给回调函数
+2.  将函数作为属性的值，传给子组件
+3.  子组件通过props调用 回调函数
+4.  将子组件中的数据作为参数传递给回调函数
 
+**代码实现**
+
+```jsx
+import React from 'react'
+
+// 子组件
+function Son(props) {
+  function handleClick() {
+    // 调用父组件传递过来的回调函数 并注入参数
+    props.changeMsg('this is newMessage')
+  }
+  return (
+    <div>
+      {props.msg}
+      <button onClick={handleClick}>change</button>
+    </div>
+  )
+}
+
+
+class App extends React.Component {
+  state = {
+    message: 'this is message'
+  }
+  // 提供回调函数
+  changeMessage = (newMsg) => {
+    console.log('子组件传过来的数据:',newMsg)
+    this.setState({
+      message: newMsg
+    })
+  }
+  render() {
+    return (
+      <div>
+        <div>父组件</div>
+        <Son
+          msg={this.state.message}
+          // 传递给子组件
+          changeMsg={this.changeMessage}
+        />
+      </div>
+    )
+  }
+}
+
+export default App
+```
+
+## 兄弟组件通信
+
+`目标任务:`   实现兄弟组件之间的通信
+
+**核心思路：** 通过状态提升机制，利用共同的父组件实现兄弟通信
+
+**实现步骤**
+
+1.  将共享状态提升到最近的公共父组件中，由公共父组件管理这个状态
+
+    *   提供共享状态
+    *   提供操作共享状态的方法
+
+2.  要接收数据状态的子组件通过 props 接收数据
+
+3.  要传递数据状态的子组件通过props接收方法，调用方法传递数据
+
+```jsx
+import React from 'react'
+
+// 子组件A
+function SonA(props) {
+  return (
+    <div>
+      SonA
+      {props.msg}
+    </div>
+  )
+}
+// 子组件B
+function SonB(props) {
+  return (
+    <div>
+      SonB
+      <button onClick={() => props.changeMsg('new message')}>changeMsg</button>
+    </div>
+  )
+}
+
+// 父组件
+class App extends React.Component {
+  // 父组件提供状态数据
+  state = {
+    message: 'this is message'
+  }
+  // 父组件提供修改数据的方法
+  changeMsg = (newMsg) => {
+    this.setState({
+      message: newMsg
+    })
+  }
+
+  render() {
+    return (
+      <>
+        {/* 接收数据的组件 */}
+        <SonA msg={this.state.message} />
+        {/* 修改数据的组件 */}
+        <SonB changeMsg={this.changeMsg} />
+      </>
+    )
+  }
+}
+
+export default App
+```
+
+## 跨组件通信Context
+
+`目标任务:`   了解Context机制解决的问题和使用步骤
+
+![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/7c4ea1ac39c847eeaca7b68815de79cb~tplv-k3u1fbpfcp-watermark.image?)
+
+上图是一个react形成的嵌套组件树，如果我们想从App组件向任意一个下层组件传递数据，该怎么办呢？目前我们能采取的方式就是一层一层的props往下传，显然很繁琐
+
+那么，Context 提供了一个**无需为每层组件手动添加 props，就能在组件树间进行数据传递的方法**
+
+***
+
+**实现步骤**
+
+1- 创建Context对象 导出 Provider 和 Consumer对象
+
+```jsx
+    const { Provider, Consumer } = createContext()
+```
+
+2- 使用Provider包裹上层组件提供数据
+
+```jsx
+    <Provider value={this.state.message}>{/* 根组件 */} </Provider>
+```
+
+3- 需要用到数据的组件使用Consumer包裹获取数据
+
+```jsx
+<Consumer >
+    {value => /* 基于 context 值进行渲染*/}
+</Consumer>
+```
+
+**代码实现**
+
+```jsx
+import React, { createContext }  from 'react'
+
+// 1. 创建Context对象 
+const { Provider, Consumer } = createContext()
+
+
+// 3. 消费数据
+function ComC() {
+  return (
+    <Consumer >
+      {value => <div>{value}</div>}
+    </Consumer>
+  )
+}
+
+function ComA() {
+  return (
+    <ComC/>
+  )
+}
+
+// 2. 提供数据
+class App extends React.Component {
+  state = {
+    message: 'this is message'
+  }
+  render() {
+    return (
+      <Provider value={this.state.message}>
+        <div className="app">
+          <ComA />
+        </div>
+      </Provider>
+    )
+  }
+}
+
+export default App
+```
+
+## 阶段小练习
+
+要求：App为父组件用来提供列表数据 ，ListItem为子组件用来渲染列表数据
+
+```js
+// 列表数据
+[
+  { id: 1, name: '超级好吃的棒棒糖', price: 18.8, info: '开业大酬宾，全场8折' },
+  { id: 2, name: '超级好吃的大鸡腿', price: 34.2, info: '开业大酬宾，全场8折' },
+  { id: 3, name: '超级无敌的冰激凌', price: 14.2, info: '开业大酬宾，全场8折' }
+]
+```
+
+完整代码
+
+```jsx
+import React from 'react'
+
+// 子组件
+function ListItem(props) {
+  const { name, price, info, id, delHandler } = props
+  return (
+    <div>
+      <h3>{name}</h3>
+      <p>{price}</p>
+      <p>{info}</p>
+      <button onClick={() => delHandler(id)}>删除</button>
+    </div>
+  )
+}
+
+// 父组件
+class App extends React.Component {
+  state = {
+    list: [
+      { id: 1, name: '超级好吃的棒棒糖', price: 18.8, info: '开业大酬宾，全场8折' },
+      { id: 2, name: '超级好吃的大鸡腿', price: 34.2, info: '开业大酬宾，全场8折' },
+      { id: 3, name: '超级无敌的冰激凌', price: 14.2, info: '开业大酬宾，全场8折' }
+    ]
+  }
+  delHandler = (id) => {
+    this.setState({
+      list: this.state.list.filter(item => item.id !== id)
+    })
+  }
+  render() {
+    return (
+      <>
+        {
+          this.state.list.map(item =>
+            <ListItem
+              key={item.id}
+              {...item}
+              delHandler={this.delHandler} 
+            />
+          )
+        }
+      </>
+    )
+  }
+}
+export default App
+```
+# React组件进阶
+
+## children属性
+
+`目标任务:`  掌握props中children属性的用法
+**children属性是什么**
+
+表示该组件的子节点，只要组件内部有子节点，props中就有该属性
+
+**children可以是什么**
+
+1.  普通文本
+1.  普通标签元素
+1.  函数 / 对象
+1.  JSX
+
+## props校验-场景和使用
+
+`目标任务:`  掌握组件props的校验写法，增加组件的健壮性
+
+
+对于组件来说，props是由外部传入的，我们其实无法保证组件使用者传入了什么格式的数据，如果传入的数据格式不对，就有可能会导致组件内部错误，有一个点很关键 - **组件的使用者可能报错了也不知道为什么**，看下面的例子
 
 
