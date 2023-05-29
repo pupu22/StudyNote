@@ -1507,4 +1507,96 @@ function App() {
 export default App
 ```
 
+### 2. 状态的读取和修改
+
+`本节任务:` 能够理解useState下状态的读取和修改
+
+**读取状态**
+
+该方式提供的状态，是函数内部的局部变量，可以在函数内的任意位置使用
+
+**修改状态**
+
+1.  setCount是一个函数，参数表示`最新的状态值`
+
+2.  调用该函数后，将使用新值替换旧值
+
+3.  修改状态后，由于状态发生变化，会引起视图变化
+
+**注意事项**
+
+1.  修改状态的时候，一定要使用新的状态替换旧的状态，不能直接修改旧的状态，尤其是引用类型
+
+### 3. 组件的更新过程
+
+`本节任务:`  能够理解使用hook之后组件的更新情况
+
+函数组件使用 **useState** hook 后的执行过程，以及状态值的变化
+
+*   组件第一次渲染
+
+    1.  从头开始执行该组件中的代码逻辑
+    2.  调用 `useState(0)` 将传入的参数作为状态初始值，即：0
+    3.  渲染组件，此时，获取到的状态 count 值为： 0
+
+*   组件第二次渲染
+
+    1.  点击按钮，调用 `setCount(count + 1)` 修改状态，因为状态发生改变，所以，该组件会重新渲染
+
+    2.  组件重新渲染时，会再次执行该组件中的代码逻辑
+
+    3.  再次调用 `useState(0)`，此时 **React 内部会拿到最新的状态值而非初始值**，比如，该案例中最新的状态值为 1
+
+    4.  再次渲染组件，此时，获取到的状态 count 值为：1
+
+注意：**useState 的初始值(参数)只会在组件第一次渲染时生效**。也就是说，以后的每次渲染，useState 获取到都是最新的状态值，React 组件会记住每次最新的状态值
+
+```jsx
+import { useState } from 'react'
+
+function App() {
+  const [count, setCount] = useState(0)
+  // 在这里可以进行打印测试
+  console.log(count)
+  return (
+    <button onClick={() => { setCount(count + 1) }}>{count}</button>
+  )
+}
+export default App
+```
+
+### 4. 使用规则
+
+`本节任务:`  能够记住useState的使用规则
+
+1.  `useState` 函数可以执行多次，每次执行互相独立，每调用一次为函数组件提供一个状态
+
+```jsx
+function List(){
+  // 以字符串为初始值
+  const [name, setName] = useState('cp')
+  // 以数组为初始值
+  const [list,setList] = useState([])
+}
+```
+
+2.  `useState` 注意事项
+
+<!---->
+
+*   只能出现在函数组件或者其他hook函数中
+*   不能嵌套在if/for/其它函数中（react按照hooks的调用顺序识别每一个hook）
+*  可以通过开发者工具查看hooks状态
+
+```jsx
+let num = 1
+function List(){
+  num++
+  if(num / 2 === 0){
+     const [name, setName] = useState('cp') 
+  }
+  const [list,setList] = useState([])
+}
+// 俩个hook的顺序不是固定的，这是不可以的！！！
+```
 
