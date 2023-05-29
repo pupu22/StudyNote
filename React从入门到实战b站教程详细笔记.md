@@ -1272,3 +1272,141 @@ class List extends Component {
 <List />
 ```
 
+## 生命周期 - 概述
+
+`目标任务:`  能够说出组件生命周期一共几个阶段
+
+组件的生命周期是指组件从被创建到挂载到页面中运行起来，再到组件不用时卸载的过程，注意，只有类组件才有生命周期（类组件 实例化  函数组件 不需要实例化）
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/8cb914ab73854d7d9f2692e807669239~tplv-k3u1fbpfcp-zoom-1.image)
+
+<http://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/>
+
+## 生命周期 - 挂载阶段
+
+`目标任务:`  能够说出在组件挂载阶段执行的钩子函数和执行时机
+
+![life1.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/a223f81528de41bebf467f5fcb1d695c~tplv-k3u1fbpfcp-zoom-1.image)
+
+| 钩子 函数             | 触发时机                        | 作用                                              |
+| ----------------- | --------------------------- | ----------------------------------------------- |
+| constructor       | 创建组件时，最先执行，初始化的时候只执行一次      | 1. 初始化state  2. 创建 Ref 3. 使用 bind 解决 this 指向问题等 |
+| render            | 每次组件渲染都会触发                  | 渲染UI（注意： 不能在里面调用setState() ）                    |
+| componentDidMount | 组件挂载（完成DOM渲染）后执行，初始化的时候执行一次 | 1. 发送网络请求   2.DOM操作                             |
+
+## 生命周期 - 更新阶段
+
+`目标任务:`  能够说出组件的更新阶段的钩子函数以及执行时机
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/631cf28553a444e98e91327f172df91b~tplv-k3u1fbpfcp-zoom-1.image)
+
+| 钩子函数               | 触发时机           | 作用                                      |
+| ------------------ | -------------- | --------------------------------------- |
+| render             | 每次组件渲染都会触发     | 渲染UI（与 挂载阶段 是同一个render）                 |
+| componentDidUpdate | 组件更新后（DOM渲染完毕） | DOM操作，可以获取到更新后的DOM内容，**不要直接调用setState** |
+
+## 生命周期 - 卸载阶段
+
+`目标任务:`  能够说出组件的销毁阶段的钩子函数以及执行时机
+
+| 钩子函数                 | 触发时机         | 作用                |
+| -------------------- | ------------ | ----------------- |
+| componentWillUnmount | 组件卸载（从页面中消失） | 执行清理工作（比如：清理定时器等） |
+
+## 阶段小练习 - todoMVC
+
+案例仓库地址：<https://gitee.com/react-course-series/react-todo-mvc>\
+1- 克隆项目到本地
+
+2- 安装必要依赖
+
+3- 开启mock接口服务，保持窗口不关闭  ！！！！！
+
+4- 另起一个bash窗口开启前端服务
+
+5- 切换到todo-test分支
+
+接口文档
+
+| 接口作用 | 接口地址                                                                              | 接口方法   | 接口参数            |
+| ---- | --------------------------------------------------------------------------------- | ------ | --------------- |
+| 获取列表 | <http://localhost:3001/data>                                                      | GET    | 无               |
+| 删除   | <http://localhost:3001/data/:id>                                                  | DELETE | id              |
+| 搜索   | [http://localhost:3001/data/?name=keyword](http://localhost:3001/data/?q=keyword) | GET    | name（以name字段搜索） |
+
+实现功能
+
+| 功能     | 核心思路                 |
+| ------ | -------------------- |
+| 表格数据渲染 | 组件使用                 |
+| 删除功能   | 获取当前id  调用接口         |
+| 搜索功能   | 用的依旧是列表接口，多传一个name参数 |
+| 清除搜索功能 | 清空搜索参数  重新获取列表       |
+
+# Hooks基础
+
+## Hooks概念理解
+
+`本节任务:` 能够理解hooks的概念及解决的问题
+
+### 1. 什么是hooks
+
+Hooks的本质：**一套能够使函数组件更强大，更灵活的“钩子”**
+
+React体系里组件分为 类组件 和 函数组件
+
+经过多年的实战，函数组件是一个更加匹配React的设计理念 `UI = f(data)`，也更有利于逻辑拆分与重用的组件表达形式，而先前的函数组件是不可以有自己的状态的，为了能让函数组件可以拥有自己的状态，所以从react v16.8开始，Hooks应运而生
+
+**注意点：**
+
+1.  有了hooks之后，为了兼容老版本，class类组件并没有被移除，俩者都可以使用
+
+2.  有了hooks之后，不能在把函数成为无状态组件了，因为hooks为函数组件提供了状态
+
+3.  hooks只能在函数组件中使用
+
+### 2. Hooks解决了什么问题
+
+Hooks的出现解决了俩个问题    1. 组件的状态逻辑复用  2.class组件自身的问题
+
+1.  组件的逻辑复用\
+    在hooks出现之前，react先后尝试了 mixins混入，HOC高阶组件，render-props等模式\
+    但是都有各自的问题，比如mixin的数据来源不清晰，高阶组件的嵌套问题等等
+2.  class组件自身的问题\
+    class组件就像一个厚重的‘战舰’ 一样，大而全，提供了很多东西，有不可忽视的学习成本，比如各种生命周期，this指向问题等等，而我们更多时候需要的是一个轻快灵活的'快艇'
+
+## useState
+
+### 1. 基础使用
+
+`本节任务:` 能够学会useState的基础用法
+
+**作用**
+
+useState为函数组件提供状态（state）
+
+**使用步骤**
+
+1.  导入 `useState` 函数
+2.  调用 `useState` 函数，并传入状态的初始值
+3.  从`useState`函数的返回值中，拿到状态和修改状态的方法
+4.  在JSX中展示状态
+5.  调用修改状态的方法更新状态
+
+**代码实现**
+
+```jsx
+import { useState } from 'react'
+
+function App() {
+  // 参数：状态初始值比如,传入 0 表示该状态的初始值为 0
+  // 返回值：数组,包含两个值：1 状态值（state） 2 修改该状态的函数（setState）
+  const [count, setCount] = useState(0)
+  return (
+    <button onClick={() => { setCount(count + 1) }}>{count}</button>
+  )
+}
+export default App
+```
+
+
