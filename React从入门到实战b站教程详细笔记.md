@@ -1345,6 +1345,102 @@ Render阶段—— 纯净且不包含副作用
 | 搜索功能   | 用的依旧是列表接口，多传一个name参数 |
 | 清除搜索功能 | 清空搜索参数  重新获取列表       |
 
+```jsx
+import { Input, Table, Space, Popconfirm } from 'antd'
+import React from 'react'
+import './App.css'
+import axios from 'axios'
+
+// 1. 找到对应的组件 把页面搭起来
+// 2. table渲染出来 (发送请求（componentDidMount）) 拿到数据 交给list（this.setState）
+// 3. 删除功能（点击哪个用哪个id  调用删除接口 重新拉取列表）
+const { Search } = Input
+
+class App extends React.Component {
+  state = {
+    list: [],
+    columns: [
+      {
+        title: '任务编号',
+        dataIndex: 'id',
+        key: 'id',
+      },
+      {
+        title: '任务名称',
+        dataIndex: 'name',
+        key: 'name', //与axios获得的数据相对，找key相同的内容来渲染这一列
+      },
+      {
+        title: '任务描述',
+        dataIndex: 'des',
+        key: 'des',
+      },
+      {
+        title: '操作',
+        dataIndex: 'do',
+        key: 'do',
+        render: (_, record) => (
+          <Space size="middle">
+            <Popconfirm title="确定要删除吗?"
+            /* record 当前行数据*/
+              onConfirm={() => this.handleDelete(record.id)}>
+              <a href="#">删除</a>
+            </Popconfirm>
+          </Space>
+        ),
+      },
+    ]
+  }
+
+  // 搜索
+  onSearch = async (value) => {
+    console.log(value)
+    const res = axios.get(`http://localhost:3001/data/?name=${value}`)
+    this.setState({
+      list: res.data
+    })
+  }
+  // 删除
+  handleDelete = async (id) => {
+    await axios.delete(`http://localhost:3001/data/${id}`)
+  }
+  // 加载列表
+  LoadList = async() => {
+    const res = await axios.get('http://localhost:3001/data')
+    console.log(res)
+    this.setState({
+      list: res.data
+    })
+  }
+
+  componentDidMount(){
+    this.LoadList()
+  }
+  render () {
+    return (
+      <div className="container">
+        <div className="search-box">
+          <Search
+            placeholder="请输入关键词"
+            allowClear
+            enterButton="搜索"
+            size="large"
+            onChange={this.inputChange}
+            value={this.state.keyword}
+            /* 点击搜索图标，清除图标，或按下回车键时的回调函数  onSearch(value, event)*/
+            onSearch={this.onSearch} 
+          />
+        </div>
+        {/* table 表格组件， 依赖两个必要数据，一个定义列，一个用来遍历渲染*/}
+        <Table bordered dataSource={this.state.list} columns={this.state.columns} pagination={false} />
+      </div>
+    )
+  }
+}
+
+export default App
+
+```
 # Hooks基础
 
 ## Hooks概念理解
