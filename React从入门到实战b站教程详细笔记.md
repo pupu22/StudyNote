@@ -1599,4 +1599,199 @@ function List(){
 }
 // 俩个hook的顺序不是固定的，这是不可以的！！！
 ```
+## useEffect
+
+### 1. 理解函数副作用
+
+`本节任务:` 能够理解副作用的概念
+
+**什么是副作用**
+
+副作用是相对于主作用来说的，一个函数除了主作用，其他的作用就是副作用。对于 React 组件来说，**主作用就是根据数据（state/props）渲染 UI**，除此之外都是副作用（比如，手动修改 DOM）
+
+**常见的副作用**
+
+1.  数据请求 ajax发送
+2.  手动修改dom
+3.  localstorage操作
+
+useEffect函数的作用就是为react函数组件提供副作用处理的！
+
+```js
+function geNum1(a + b){
+    return a + b //纯函数
+}
+let count = 0
+function geNum2(a + b){
+    count ++;
+    return a + b //不是纯函数，还包含了副作用count ++
+}
+
+```
+
+### 2. 基础使用
+
+`本节任务:` 能够学会useEffect的基础用法并且掌握默认的执行执行时机
+
+**作用**
+
+为react函数组件提供副作用处理
+
+**使用步骤**
+
+1.  导入 `useEffect` 函数
+2.  调用 `useEffect` 函数，并传入回调函数
+3.  在回调函数中编写副作用处理（dom操作）
+4.  修改数据状态
+5.  检测副作用是否生效
+
+```jsx
+//在修改数据后，把count 值放到页面标题中
+import { useEffect, useState } from 'react'
+
+function App() {
+  const [count, setCount] = useState(0)
+ 
+  useEffect(()=>{
+    // dom操作
+    document.title = `当前已点击了${count}次`
+  })
+  return (
+    <button onClick={() => { setCount(count + 1) }}>{count}</button>
+  )
+}
+
+export default App
+```
+
+### . 依赖项控制执行时机
+
+`本节任务:` 能够学会使用依赖项控制副作用的执行时机
+
+**1. 不添加依赖项**
+
+组件首次渲染执行一次，以及不管是哪个状态更改引起组件更新时都会重新执行
+
+1.  组件初始渲染
+2.  组件更新 （不管是哪个状态引起的更新）
+
+```jsx
+useEffect(()=>{
+    console.log('副作用执行了')
+})
+```
+
+**2. 添加空数组**
+
+组件只在首次渲染时执行一次
+
+```jsx
+useEffect(()=>{
+	 console.log('副作用执行了')
+},[])
+```
+
+**3. 添加特定依赖项**
+
+副作用函数在首次渲染时执行，在依赖项发生变化时重新执行
+
+```jsx
+function App() {  
+    const [count, setCount] = useState(0)  
+    const [name, setName] = useState('zs') 
+    
+    useEffect(() => {    
+        console.log('副作用执行了')  
+    }, [count])  
+    
+    return (    
+        <>      
+         <button onClick={() => { setCount(count + 1) }}>{count}</button>      
+         <button onClick={() => { setName('cp') }}>{name}</button>    
+        </>  
+    )
+}
+```
+
+**注意事项**
+
+useEffect 回调函数中用到的数据（比如，count）就是依赖数据，就应该出现在依赖项数组中，如果不添加依赖项就会有bug出现（即回调函数中包含了哪个数据，哪些数据就应该放在useEffect的第二个参数数组中）
+
+### 4. 清理副作用
+
+如果想要清理副作用 可以在副作用函数中的末尾return一个新的函数，在新的函数中编写清理副作用的逻辑
+
+注意执行时机为：
+
+1.  组件卸载时自动执行
+2.  组件更新时，下一个useEffect副作用函数执行之前自动执行
+
+```jsx
+import { useEffect, useState } from "react"
+
+
+const App = () => {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCount(count + 1)
+    }, 1000)
+    return () => {
+      // 用来清理副作用的事情
+      clearInterval(timerId)
+    }
+  }, [count])
+  return (
+    <div>
+      {count}
+    </div>
+  )
+}
+
+export default App
+```
+
+## 阶段小练习 - 自定义hook
+
+**需求描述**：自定义一个hook函数，实现获取滚动距离Y
+
+`const [y] = useWindowScroll()`
+
+```jsx
+import { useState, useEffect } from "react"
+
+export function useWindowScroll () {
+  const [y, setY] = useState(0)
+  useEffect(()=>{
+     const scrollHandler = () => {
+        const h = document.documentElement.scrollTop
+        setY(h)
+     })
+     window.addEventListener('scroll', scrollHandler)
+     return () => window.removeEventListener('scroll', scrollHandler)
+  })
+ 
+  return [y]
+}
+```
+
+**需求描述：** 自定义hook函数，可以自动同步到本地LocalStorage
+
+`const [message, setMessage] = useLocalStorage(key，defaultValue)`
+
+1.  message可以通过自定义传入默认初始值
+2.  每次修改message数据的时候 都会自动往本地同步一份
+
+```jsx
+import { useEffect, useState } from 'react'
+
+export function useLocalStorage (key, defaultValue) {
+  const [message, setMessage] = useState(defaultValue)
+  // 每次只要message变化 就会自动同步到本地ls
+  useEffect(() => {
+    window.localStorage.setItem(key, message)
+  }, [message, key])
+  return [message, setMessage]
+}
+```
 
