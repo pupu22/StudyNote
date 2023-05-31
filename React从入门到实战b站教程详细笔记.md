@@ -735,6 +735,7 @@ export default App
     })
   }
 ```
+可能的解释：state的更新可能是异步的。因为`this.props`和`this.state`可能会异步更新，所以不要依赖他们的值来更新下一个状态。
 
 # React组件通信
 
@@ -1146,6 +1147,7 @@ class App extends React.Component {
 }
 export default App
 ```
+
 # React组件进阶
 
 ## children属性
@@ -1158,14 +1160,41 @@ export default App
 **children可以是什么**
 
 1.  普通文本
-1.  普通标签元素
-1.  函数 / 对象
-1.  JSX
+2.  普通标签元素
+3.  函数 / 对象
+4.  JSX
+
+```jsx
+import React from 'react'
+
+// 子组件
+function ListItem({children}) { //props解构
+  return (
+    <div>
+      ListItem {children.map(child => child)}
+    </div>
+  )
+}
+
+// 父组件
+class App extends React.Component {
+  render() {
+    return (
+      <div>
+        <ListItem> //children会是一个数组
+          <div>this is child</div>
+          <p>this is p</p>
+        </ListItem>
+      </div>
+    )
+  }
+}
+export default App
+```
 
 ## props校验-场景和使用
 
 `目标任务:`  掌握组件props的校验写法，增加组件的健壮性
-
 
 对于组件来说，props是由外部传入的，我们其实无法保证组件使用者传入了什么格式的数据，如果传入的数据格式不对，就有可能会导致组件内部错误，有一个点很关键 - **组件的使用者可能报错了也不知道为什么**，看下面的例子
 
@@ -1240,7 +1269,7 @@ optionalObjectWithShape: PropTypes.shape({
 直接使用函数参数默认值
 
 ```jsx
-function List({pageSize = 10}) {
+function List({pageSize = 10}) { //只有传递的时候函数内部才有这个prop
   return (
     <div>
       此处展示props的默认值：{ pageSize }
@@ -1290,11 +1319,11 @@ Render阶段—— 纯净且不包含副作用
 
 ![life1.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/a223f81528de41bebf467f5fcb1d695c~tplv-k3u1fbpfcp-zoom-1.image)
 
-| 钩子 函数             | 触发时机                        | 作用                                              |
-| ----------------- | --------------------------- | ----------------------------------------------- |
+| 钩子 函数             | 触发时机                        | 作用                                                                        |
+| ----------------- | --------------------------- | ------------------------------------------------------------------------- |
 | constructor       | 创建组件时，最先执行，初始化的时候只执行一次      | 1. 初始化state  2. 创建 Ref（前两种情况，**是之前这样用，现在不这样用了**） 3. 使用 bind 解决 this 指向问题等 |
-| render            | 每次组件渲染都会触发                  | 渲染UI（注意： 不能在里面调用setState() ）                    |
-| componentDidMount | 组件挂载（完成DOM渲染）后执行，初始化的时候执行一次 | 1. 发送网络请求   2.DOM操作                             |
+| render            | 每次组件渲染都会触发                  | 渲染UI（注意： 不能在里面调用setState() ）                                              |
+| componentDidMount | 组件挂载（完成DOM渲染）后执行，初始化的时候执行一次 | 1. 发送网络请求   2.DOM操作                                                       |
 
 ## 生命周期 - 更新阶段
 
@@ -1344,6 +1373,8 @@ Render阶段—— 纯净且不包含副作用
 | 删除功能   | 获取当前id  调用接口         |
 | 搜索功能   | 用的依旧是列表接口，多传一个name参数 |
 | 清除搜索功能 | 清空搜索参数  重新获取列表       |
+
+**完整代码**
 
 ```jsx
 import { Input, Table, Space, Popconfirm } from 'antd'
@@ -1441,6 +1472,7 @@ class App extends React.Component {
 export default App
 
 ```
+
 # Hooks基础
 
 ## Hooks概念理解
@@ -1490,6 +1522,8 @@ useState为函数组件提供状态（state）
 3.  从`useState`函数的返回值中，拿到状态和修改状态的方法
 4.  在JSX中展示状态
 5.  调用修改状态的方法更新状态
+
+\[count, setCount] = useState(0) 是一个解构赋值，useState返回值是一个数组
 
 **代码实现**
 
@@ -1586,7 +1620,7 @@ function List(){
 
 *   只能出现在函数组件或者其他hook函数中
 *   不能嵌套在if/for/其它函数中（react按照hooks的调用顺序识别每一个hook）
-*  可以通过开发者工具查看hooks状态
+*   可以通过开发者工具查看hooks状态
 
 ```jsx
 let num = 1
@@ -1599,6 +1633,7 @@ function List(){
 }
 // 俩个hook的顺序不是固定的，这是不可以的！！！
 ```
+
 ## useEffect
 
 ### 1. 理解函数副作用
@@ -1616,6 +1651,8 @@ function List(){
 3.  localstorage操作
 
 useEffect函数的作用就是为react函数组件提供副作用处理的！
+
+useEffect 回调，是在dom渲染之后才执行的，和Vue中的watch效果比较像，但是执行时机不同。
 
 ```js
 function geNum1(a + b){
@@ -1961,6 +1998,8 @@ export default App
 2.  在顶层组件通过`Provider` 提供数据
 3.  在底层组件通过`useContext`函数获取数据
 
+注意：useContext数据查找机制， 优先从 `Provider` 的 `value`找，如果找不到，会去找`createContext`方法传进来的默认参数
+
 **代码实现**
 
 ```jsx
@@ -2029,6 +2068,7 @@ const routes = [
   }
 ]
 ```
+
 # 准备项目环境
 
 create-react-app -> cra -> webpack
@@ -2374,4 +2414,548 @@ function App() {
 }
 
 export default App
+```
+
+# 1.  Mobx介绍
+
+一个可以和React良好配合的集中状态管理工具，和Redux解决的问题相似，都可以独立组件进行集中状态管理
+
+## 优势
+
+1.  简单
+
+编写**无模板**的极简代码精准描述你的意图（redux需要很多模板）
+
+2.  轻松实现最优渲染
+
+依赖自动追踪，实现最小渲染优化
+
+3.  架构自由
+
+可移植, 可测试 无特殊心智负担
+
+# 2. 配置开发环境
+
+Mobx是一个独立的响应式的库，可以独立于任何UI框架存在，但是通常大家习惯把它和React进行绑定使用，用Mobx来做响应式数据建模，React作为UI视图框架渲染内容，我们环境的配置需要三个部分
+
+1.  一个create-react-app创建好的React项目环境
+2.  mobx框架本身
+3.  一个用来链接mobx和React的中间件
+
+```bash
+# 创建项目
+$ yarn create vite react-mobx --template react
+
+# 安装mobx和中间件工具 mobx-react-lite  只能函数组件中使用
+$ yarn add  mobx  mobx-react-lite
+```
+
+# 3. 基础使用
+
+需求: 使用mobx实现一个计数器的案例
+
+![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/e0bba4fdba9e47c8a6684b4f446305b5~tplv-k3u1fbpfcp-watermark.image?)
+
+## 1. 初始化mobx
+
+初始化步骤
+
+1.  定义数据状态**state**
+2.  在构造器中实现数据响应式处理 **makeAutoObservble**
+3.  定义修改数据的函数**action**
+4.  实例化store并导出
+
+```js
+import { makeAutoObservable } from 'mobx'
+
+class CounterStore {
+  count = 0 // 1. 定义数据
+  constructor() {
+    makeAutoObservable(this)  // 2. 响应式处理
+  }
+  // 3. 定义修改数据的方法
+  addCount = () => {
+    this.count++
+  }
+}
+// 4. 实例化store并导出
+const counter = new CounterStore()
+export default counter
+```
+
+## 2. React使用store
+
+实现步骤
+
+1.  在组件中导入counterStore实例对象
+2.  在组件中使用storeStore实例对象中的数据
+3.  通过事件调用修改数据的方法修改store中的数据
+4.  让组件响应数据变化
+
+```jsx
+// 导入counterStore
+import counterStore from './store'
+// 导入observer方法 中间件，连接mobx与react
+import { observer } from 'mobx-react-lite'
+function App() {
+  return (
+    <div className="App">
+      <button onClick={() => counterStore.addCount()}>
+        {counterStore.count}
+      </button>
+    </div>
+  )
+}
+// 包裹组件让视图响应数据变化
+export default observer(App)
+```
+
+# 4. 计算属性（衍生状态）
+
+概念: 有一些状态根据现有的状态计算（衍生）得到，我们把这种状态叫做计算属性, 看下面的例子
+
+![image.png](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/dad95cf9801d4241aa7336e5664a0df7~tplv-k3u1fbpfcp-watermark.image?)
+实现步骤
+
+1.  声明一个存在的数据
+2.  通过get关键词 定义计算属性
+3.  在 makeAutoObservable 方法中标记计算属性（可选，标记是为了可读性更好）
+
+```jsx
+import { computed, makeAutoObservable } from 'mobx'
+
+class CounterStore {
+  list = [1, 2, 3, 4, 5, 6]
+  constructor() {
+    makeAutoObservable(this, {
+      filterList: computed
+    })
+  }
+  // 修改原数组
+  changeList = () => {
+    this.list.push(7, 8, 9)
+  }
+  // 定义计算属性
+  get filterList () {
+    return this.list.filter(item => item > 4)
+  }
+}
+
+const counter = new CounterStore()
+
+export default counter
+```
+
+```jsx
+// 导入counterStore
+import counterStore from './store'
+// 导入observer方法
+import { observer } from 'mobx-react-lite'
+function App() {
+  return (
+    <div className="App">
+      {/* 原数组 */}
+      {JSON.stringify(counterStore.list)}
+      {/* 计算属性 */}
+      {JSON.stringify(counterStore.filterList)}
+      <button onClick={() => counterStore.changeList()}>change list</button>
+    </div>
+  )
+}
+// 包裹组件让视图响应数据变化
+export default observer(App)
+```
+
+# 5. 异步数据处理
+
+测试接口: [http://geek.itheima.net/v1\_0/channels](http://geek.itheima.net/v1_0/channels')
+
+实现步骤:
+
+1.  在mobx中编写异步请求方法 获取数据 存入state中
+2.  组件中通过 useEffect + 空依赖 触发action函数的执行
+
+```js
+// 异步的获取
+
+import { makeAutoObservable } from 'mobx'
+import axios from 'axios'
+
+class ChannelStore {
+  channelList = []
+  constructor() {
+    makeAutoObservable(this)
+  }
+  // 只要调用这个方法 就可以从后端拿到数据并且存入channelList
+  setChannelList = async () => {
+    const res = await axios.get('http://geek.itheima.net/v1_0/channels')
+    this.channelList = res.data.data.channels
+  }
+}
+const channlStore = new ChannelStore()
+export default channlStore
+```
+
+```jsx
+import { useEffect } from 'react'
+import { useStore } from './store'
+import { observer } from 'mobx-react-lite'
+function App() {
+  const { channlStore } = useStore()
+  // 1. 使用数据渲染组件
+  // 2. 触发action函数发送异步请求
+  useEffect(() => {
+    channlStore.setChannelList()
+  }, [])
+  return (
+    <ul>
+      {channlStore.channelList.map((item) => (
+        <li key={item.id}>{item.name}</li>
+      ))}
+    </ul>
+  )
+}
+// 让组件可以响应数据的变化[也就是数据一变组件重新渲染]
+export default observer(App)
+```
+
+# 6. 模块化
+
+场景: 一个项目有很多的业务模块，我们不能把所有的代码都写到一起，这样不好维护，为了提供可维护性，需要引入模块化机制
+
+![image.png](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5de469f8b5b54e4582da16cead1e5ab5~tplv-k3u1fbpfcp-watermark.image?)
+
+**实现步骤**
+
+1.  拆分模块js文件，每个模块中定义自己独立的state/action
+2.  在store/index.js中导入拆分之后的模块，进行模块组合
+3.  利用React的context的机制导出统一的useStore方法，给业务组件使用
+
+## 1. 定义task模块
+
+```js
+import { makeAutoObservable } from 'mobx'
+
+class TaskStore {
+  taskList = []
+  constructor() {
+    makeAutoObservable(this)
+  }
+  addTask () {
+    this.taskList.push('vue', 'react')
+  }
+}
+
+const task = new TaskStore()
+
+
+export default task
+```
+
+## 2. 定义counterStore
+
+```js
+import { makeAutoObservable } from 'mobx'
+
+class CounterStore {
+  count = 0
+  list = [1, 2, 3, 4, 5, 6]
+  constructor() {
+    makeAutoObservable(this)
+  }
+  addCount = () => {
+    this.count++
+  }
+  changeList = () => {
+    this.list.push(7, 8, 9)
+  }
+  get filterList () {
+    return this.list.filter(item => item > 4)
+  }
+}
+
+const counter = new CounterStore()
+
+export default counter
+```
+
+## 3. 组合模块导出统一方法
+
+```js
+import React from 'react'
+
+import counter from './counterStore'
+import task from './taskStore'
+
+
+class RootStore {
+  constructor() {
+    this.counterStore = counter
+    this.taskStore = task
+  }
+}
+
+
+const rootStore = new RootStore()
+
+// context机制的数据查找链  Provider如果找不到 就找createContext方法执行时传入的参数
+const context = React.createContext(rootStore)
+
+const useStore = () => React.useContext(context)
+// useStore() =>  rootStore  { counterStore, taskStore }
+
+export { useStore }
+```
+
+## 4. 组件使用模块中的数据
+
+```jsx
+import { observer } from 'mobx-react-lite'
+// 导入方法
+import { useStore } from './store'
+function App() {
+  // 得到store
+  const store = useStore()
+  return (
+    <div className="App">
+      <button onClick={() => store.counterStore.addCount()}>
+        {store.counterStore.count}
+      </button>
+    </div>
+  )
+}
+// 包裹组件让视图响应数据变化
+export default observer(App)
+```
+
+# 8. Todos综合案例
+
+功能：
+
+*   列表渲染
+*   单选功能
+*   全选功能
+*   删除功能
+*   回车新增功能
+*   统计计数功能
+
+## 1. 开发环境搭建
+
+```bash
+# 克隆模块到本地
+$ git clone https://gitee.com/react-course-series/mobx_react.git
+
+# 安装所有依赖
+$ yarn 
+
+# master分支是一个静态的模板  在这个里面进行开发
+# finished-mvc分支是一个写完的版本  供参考
+```
+
+## 2. Mobx和React的职责划分
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ff9c35318d884354a11263ab16051856~tplv-k3u1fbpfcp-zoom-1.image)
+
+## 3. 列表渲染
+
+```jsx
+import './index.css'
+import { useStore } from '../store'
+function Task () {
+  const { taskStore } = useStore()
+  return (
+    <section className="todoapp">
+      <section className="main">
+        {/* 省略 */}
+        <ul className="todo-list">
+          {/* 列表区域 */}
+          {taskStore.list.map(item => (
+            <li
+              className="todo"
+              key={item.id}
+            >
+              <div className="view">
+                <input
+                  className="toggle"
+                  type="checkbox"
+                 />
+                <label >{item.name}</label>
+                <button className="destroy"}></button>
+              </div>
+            </li>
+          ))}
+
+          {/* <li
+            className="todo completed"
+          >
+            <div className="view">
+              <input className="toggle" type="checkbox" defaultChecked={true} />
+              <label >learn react</label>
+              <button className="destroy"></button>
+            </div>
+          </li> */}
+        </ul>
+      </section>
+      <footer className="footer">
+        <span className="todo-count">
+          任务总数: {10} 已完成: {1}
+        </span>
+      </footer>
+    </section>
+  )
+}
+
+export default observer(Task)
+```
+
+## 4. 单选实现
+
+实现思路和步骤: 本质上是在实现双向绑定
+
+1.  通过store中的数据状态 isDone字段 绑定到input元素的 checked属性上
+2.  监听事件 调用mobx的对应方法 传入id 找到要修改的项 把isDone字段取反操作
+
+```jsx
+import { makeAutoObservable } from 'mobx'
+class TaskStore {
+  list = [
+    {
+      id: 1,
+      name: '学习react',
+      isDone: true
+    },
+    {
+      id: 2,
+      name: '搞定mobx',
+      isDone: false
+    }
+  ]
+  constructor() {
+    makeAutoObservable(this)
+  }
+  // 进行单选修改数据的方法
+  checkItem = (id) => {
+    const item = this.list.find(item => item.id === id)
+    item.isDone = !item.isDone
+  }
+}
+export default TaskStore
+
+```
+
+```jsx
+const onChange = (id) => taskStore.checkItem(id)
+
+<input
+    className="toggle"
+    type="checkbox"
+    checked={item.isDone}
+    onChange={() => onChange(item.id)}
+/>
+```
+
+## 5. 删除功能
+
+实现思路和步骤：
+
+1.  在mobx中定义好删除数据的方法
+
+2.  点击删除 调用mobx提供的删除方法 传出id 进行删除
+
+```js
+// 删除的方法
+delItem = (id) => {
+  this.list = this.list.filter(item => item.id !== id)
+}
+```
+
+```jsx
+// 删除操作
+const onDel = (id) => taskStore.delItem(id)
+
+<button className="destroy" onClick={() => onDel(item.id)}></button>
+```
+
+## 6. 全选功能
+
+实现思路和步骤:
+
+1.  实现数据驱动权限UI显示 通过计算属性 + every方法
+2.  实现点击权限 控制所有子项 change事件拿到e.target.checked 遍历list进行isDone赋值
+
+```js
+// 是否全选的计算属性
+get isAll () {
+  return this.list.every(item => item.isDone)
+}
+
+// 遍历修改所有item
+allCheckItem = (checked) => {
+  this.list.forEach(item => {
+    item.isDone = checked
+  })
+}
+```
+
+```jsx
+// 全选操作回调
+const allChange = (e) => {
+  // 通过事件对象e拿到当前是否选中的状态 
+  taskStore.allCheckItem(e.target.checked)
+}
+
+{/* 全选框 */}
+<input
+  id="toggle-all"
+  className="toggle-all"
+  type="checkbox"
+  checked={taskStore.isAll}
+  onChange={allChange}
+/>
+```
+
+## 7. 新增功能
+
+实现思路和步骤:
+
+1.  在mobx中编写新增方法的逻辑
+2.  在组件中通过受控方式维护输入框中的数据
+3.  在组件中监听keyUp方法 判断当前是否点击的是回车键 如果是 调用mobx的方法进行新增
+
+```js
+  addItem = (item) => {
+    this.list.push(item)
+  }
+```
+
+```jsx todo/index.js
+// 受控方式维护输入框数据
+const [keyword, setKeyword] = useState('')
+const keywordChange = (e) => {
+  setKeyword(e.target.value)
+}
+
+// 键盘抬起事件中 判断code码进行新增
+const onKeyUp = (e) => {
+  console.log(e)
+  if (e.keyCode === 13) {
+    taskStore.addItem({
+      id: 3,
+      name: keyword,
+      isDone: false
+    })
+    // 新增完毕置空
+    setKeyword('')
+  }
+}
+
+<input
+  className="new-todo"
+  autoFocus
+  autoComplete="off"
+  placeholder="What needs to be done?"
+  value={keyword}
+  onChange={keywordChange}
+  onKeyUp={onKeyUp}
+/>
 ```
