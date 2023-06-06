@@ -1591,6 +1591,21 @@ const Article = () => {
 }
 ```
 
+### 问题
+
+封面部分的代码有问题，从第5.8章节可以知道，`cover` 是一个对象，里面包含了type和images列表（多张图片的url），因此src应该等于 `cover.imges[i]`
+
+```js
+{
+  title: '封面',
+  dataIndex: 'cover',
+  width:120,
+  render: cover => {
+    return <img src={cover.images || img404} width={80} height={60} alt="" />
+  }
+}
+```
+
 ## 3. 渲染频道数据
 
 `本节目标:`  使用接口数据渲染频道列表
@@ -1683,31 +1698,6 @@ return (
 )
 ```
 
-### 问题
-
-文章表格的分页如何实现
-
-```jsx
-// 参数管理
-const [params, setParams] = useState({
-    page: 1,
-    per_page: 10
-})
-
-// 发送接口请求
-useEffect(() => {
-    async function fetchArticleList() {
-      const res = await http.get('/mp/articles', { params })
-      const { results, total_count } = res.data
-      setArticleList({
-        list: results,
-        count: total_count
-      })
-    }
-    fetchArticleList()
-}, [params]) //每次翻页都要重新发送请求
-```
-
 ## 5. 筛选功能实现
 
 `本节目标:` 能够根据筛选条件筛选表格数据
@@ -1785,6 +1775,28 @@ return (
     />
 )
 ```
+
+### 问题
+
+按照以上代码编写无法实现分页功能，antd5应该在哪里有了改动
+
+解决方法：参数写错了，正确代码如下
+
+```jsx
+<Table rowKey="id" columns={columns} dataSource={article.list} 
+    pagination={{
+        position: ['bottomCenter'],
+        current: params.page,
+        pageSize: params.per_page,//每一页多少数据
+        total: article.count,//总共多少数据
+        onChange: pageChange
+    }}
+/>
+```
+
+## 6.5 useState与useEffect的拆分粒度
+
+代码中写了多个 `useState`和 `useEffect`，不能将它们合并在一起，因为它们的业务逻辑不同，不同的`useEffect`依赖的数据不同。
 
 ## 7. 删除功能
 
@@ -1878,3 +1890,846 @@ const columns = [
 **代码实现**
 
 `pages/Publish/index.js`
+
+```jsx
+import {
+  Card,
+  Breadcrumb,
+  Form,
+  Button,
+  Radio,
+  Input,
+  Upload,
+  Space,
+  Select
+} from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { Link } from 'react-router-dom'
+import './index.scss'
+
+const { Option } = Select
+
+const Publish = () => {
+  return (
+    <div className="publish">
+      <Card
+        title={
+          <Breadcrumb separator=">">
+            <Breadcrumb.Item>
+              <Link to="/home">首页</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>发布文章</Breadcrumb.Item>
+          </Breadcrumb>
+        }
+      >
+        <Form
+          labelCol={{ span: 4 }}
+          wrapperCol={{ span: 16 }}
+          initialValues={{ type: 1 }}
+        >
+          <Form.Item
+            label="标题"
+            name="title"
+            rules={[{ required: true, message: '请输入文章标题' }]}
+          >
+            <Input placeholder="请输入文章标题" style={{ width: 400 }} />
+          </Form.Item>
+          <Form.Item
+            label="频道"
+            name="channel_id"
+            rules={[{ required: true, message: '请选择文章频道' }]}
+          >
+            <Select placeholder="请选择文章频道" style={{ width: 400 }}>
+              <Option value={0}>推荐</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="封面">
+            <Form.Item name="type">
+              <Radio.Group>
+                <Radio value={1}>单图</Radio>
+                <Radio value={3}>三图</Radio>
+                <Radio value={0}>无图</Radio>
+              </Radio.Group>
+            </Form.Item>
+            <Upload
+              name="image"
+              listType="picture-card"
+              className="avatar-uploader"
+              showUploadList
+            >
+              <div style={{ marginTop: 8 }}>
+                <PlusOutlined />
+              </div>
+            </Upload>
+          </Form.Item>
+          <Form.Item
+            label="内容"
+            name="content"
+            rules={[{ required: true, message: '请输入文章内容' }]}
+          ></Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 4 }}>
+            <Space>
+              <Button size="large" type="primary" htmlType="submit">
+                发布文章
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+    </div>
+  )
+}
+
+export default Publish
+```
+
+pages/Publish/index.scss
+
+```css
+.publish {
+  position: relative;
+}
+
+.ant-upload-list {
+  .ant-upload-list-picture-card-container,
+  .ant-upload-select {
+    width: 146px;
+    height: 146px;
+  }
+}
+```
+
+## 2. 富文本编辑器
+
+`本节目标:`  能够安装并初始化富文本编辑器
+
+**实现步骤**
+
+1.  安装富文本编辑器：`yarn add react-quill@2.0.0-beta.2` \[react-quill需要安装beta版本适配react18 否则无法输入中文]
+
+2.  导入富文本编辑器组件以及样式文件
+
+3.  渲染富文本编辑器组件
+
+4.  通过 Form 组件的 `initialValues` 为富文本编辑器设置初始值，否则会报错
+
+5.  调整富文本编辑器的样式
+
+**代码实现**
+
+`pages/Publish/index.js`
+
+```jsx
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
+
+const Publish = () => {
+  return (
+    // ...
+    <Form
+      labelCol={{ span: 4 }}
+      wrapperCol={{ span: 16 }}
+      // 注意：此处需要为富文本编辑表示的 content 文章内容设置默认值
+      initialValues={{ content: '' }}
+    >
+      <Form.Item
+        label="内容"
+        name="content"
+        rules={[{ required: true, message: '请输入文章内容' }]}
+      >
+        <ReactQuill
+          className="publish-quill"
+          theme="snow"
+          placeholder="请输入文章内容"
+        />
+      </Form.Item>
+    </Form>
+  )
+}
+```
+
+pages/Publish/index.scss
+
+```css
+.publish-quill {
+  .ql-editor {
+    min-height: 300px;
+  }
+}
+```
+
+## 3. 频道数据获取
+
+`本节目标:` 实现频道数据的获取和渲染
+
+**实现步骤**
+
+1.  使用useState初始化数据和修改数据的方法
+
+2.  在useEffect中调用接口并保存数据
+
+3.  使用数据渲染对应模块
+
+**代码实现**
+
+```jsx
+// 频道列表
+const [channels, setChannels] = useState([])
+    useEffect(() => {
+    async function fetchChannels() {
+      const res = await http.get('/channels')
+      setChannels(res.data.channels)
+    }
+    fetchChannels()
+}, [])
+
+// 模板渲染
+return (
+ <Form.Item
+    label="频道"
+    name="channel_id"
+    rules={[{ required: true, message: '请选择文章频道' }]}
+  >
+    <Select placeholder="请选择文章频道" style={{ width: 200 }}>
+      {channels.map(item => (
+        <Option key={item.id} value={item.id}>
+          {item.name}
+        </Option>
+      ))}
+    </Select>
+  </Form.Item>
+)
+```
+
+## 4. 上传封面实现
+
+`本节目标:` 能够实现上传图片
+
+**实现步骤**
+
+1.  为 Upload 组件添加 action 属性，指定封面图片上传接口地址
+
+2.  创建状态 fileList 存储已上传封面图片地址，并设置为 Upload 组件的 fileList 属性值
+
+3.  为 Upload 添加 onChange 属性，监听封面图片上传、删除等操作
+
+4.  在 change 事件中拿到当前图片数据，并存储到状态 fileList 中
+
+**代码实现**
+
+```jsx
+import { useState } from 'react'
+
+const Publish = () => {
+  const [fileList, setFileList] = useState([])
+  // 上传成功回调
+  const onUploadChange = info => {
+    const fileList = info.fileList.map(file => {
+      if (file.response) {
+        return {
+          url: file.response.data.url
+        }
+      }
+      return file
+    })
+    setFileList(fileList)
+  }
+
+  return (
+    <Upload
+      name="image"
+      listType="picture-card"
+      className="avatar-uploader"
+      showUploadList
+      action="http://geek.itheima.net/v1_0/upload"
+      fileList={fileList}
+      onChange={onUploadChange}
+    >
+      <div style={{ marginTop: 8 }}>
+        <PlusOutlined />
+      </div>
+    </Upload>
+  )
+}
+```
+
+## 5.切换图片Type
+
+`本节目标:` 实现点击切换图片类型
+
+**实现步骤**
+
+1.  创建状态 maxCount
+
+2.  给 Radio 添加 onChange 监听单图、三图、无图的切换事件
+
+3.  在切换事件中修改 maxCount 值
+
+4.  只在 maxCount 不为零时展示 Upload 组件
+
+**代码实现**
+
+`pages/Publish/index.js`
+
+```jsx
+const Publish = () => {
+  const [imgCount, setImgCount] = useState(1)
+
+  const changeType = e => {
+    const count = e.target.value
+    setImgCount(count)
+  }
+
+  return (
+    // ...
+    <Form.Item label="封面">
+      <Form.Item name="type">
+        <Radio.Group onChange={changeType}>
+          <Radio value={1}>单图</Radio>
+          <Radio value={3}>三图</Radio>
+          <Radio value={0}>无图</Radio>
+        </Radio.Group>
+      </Form.Item>
+      {maxCount > 0 && (
+        <Upload
+          name="image"
+          listType="picture-card"
+          className="avatar-uploader"
+          showUploadList
+          action="http://geek.itheima.net/v1_0/upload"
+        >
+          <div style={{ marginTop: 8 }}>
+            <PlusOutlined />
+          </div>
+        </Upload>
+      )}
+    </Form.Item>
+  )
+}
+```
+
+## 6. 控制最大上传数量
+
+`本节目标:` 控制Upload组件的最大上传数量和是否支持多张图片
+
+**实现步骤**
+
+1.  修改 Upload 组件的 `maxCount（最大数量）`属性控制最大上传数量
+
+2.  控制`multiple （支持多图选择）属性` 控制是否支持选择多张图片
+
+**代码实现**
+
+`pages/Publish/index.js`
+
+```jsx
+const Publish = () => {
+  return (
+    // ...
+    <Form.Item label="封面">
+      <Form.Item name="type">
+        <Radio.Group onChange={changeType}>
+          <Radio value={1}>单图</Radio>
+          <Radio value={3}>三图</Radio>
+          <Radio value={0}>无图</Radio>
+        </Radio.Group>
+      </Form.Item>
+      {maxCount > 0 && (
+        <Upload
+          name="image"
+          listType="picture-card"
+          className="avatar-uploader"
+          showUploadList
+          action="http://geek.itheima.net/v1_0/upload"
+          maxCount={ maxCount }
+          multiple={ maxCount > 1 }
+        >
+          <div style={{ marginTop: 8 }}>
+            <PlusOutlined />
+          </div>
+        </Upload>
+      )}
+    </Form.Item>
+  )
+}
+```
+
+## 7. 暂存图片列表实现
+
+`本节目标:` 能够实现暂存已经上传的图片列表，能够在切换图片类型的时候完成切换
+
+**问题描述**
+
+如果当前为三图模式，已经完成了上传，选择单图只显示一张，再切换到三图继续显示三张，该如何实现？
+
+**实现思路**
+
+在上传完毕之后通过ref存储所有图片，需要几张就显示几张，其实也就是把ref当仓库，用多少拿多少
+
+**实现步骤 （特别注意useState异步更新的坑）**
+
+1.  通过useRef创建一个暂存仓库，在上传完毕图片的时候把图片列表存入
+
+2.  如果是单图模式，就从仓库里取第一张图，以**数组的形式**存入fileList
+
+3.  如果是三图模式，就把仓库里所有的图片，以**数组的形式**存入fileList
+
+**代码实现**
+
+```js
+const Publish = () => {
+  // 1. 声明一个暂存仓库
+  const fileListRef = useRef([])
+  
+  // 2. 上传图片时，将所有图片存储到 ref 中
+  const onUploadChange = info => {
+    // ...
+    fileListRef.current = imgUrls
+  }
+  
+  // 3. 切换图片类型
+  const changeType = e => {
+    // 使用原始数据作为判断条件
+    const count = e.target.value
+    setMaxCount(count)
+
+    if (count === 1) {
+      // 单图，只展示第一张
+      const firstImg = fileListRef.current[0]
+      setFileList(!firstImg ? [] : [firstImg])
+    } else if (count === 3) {
+      // 三图，展示所有图片
+      setFileList(fileListRef.current)
+    }
+  }
+
+}
+```
+
+## 8. 发布文章实现
+
+`本节目标:` 能够在表单提交时组装表单数据并调用接口发布文章
+
+**实现步骤**
+
+1.  给 Form 表单添加 `onFinish` 用来获取表单提交数据
+2.  在事件处理程序中，拿到表单数据按照接口需要格式化数据
+3.  调用接口实现文章发布，其中的接口数据格式为:（表单提交的数据中没有cover）
+
+```js
+{
+   channel_id: 1
+   content: "<p>测试</p>" //富文本编辑器产生的内容
+   cover: {
+      type: 1, //图片模式，单图、多图、无图
+      images: ["http://geek.itheima.net/uploads/1647066600515.png"]
+   },
+   type: 1 //图片模式，单图、多图、无图
+   title: "测试文章"
+}
+```
+
+**代码实现**
+
+```jsx
+    const onFinish = async (values) => {
+    // 数据的二次处理 重点是处理cover字段
+    const { channel_id, content, title, type } = values
+    const params = {
+      channel_id,
+      content,
+      title,
+      type,
+      cover: {
+        type: type,
+        images: fileList.map(item => item.response.data.url)
+      }
+    }
+    await http.post('/mp/articles?draft=false', params)
+  }
+  
+<Form
+  labelCol={{ span: 4 }}
+  wrapperCol={{ span: 16 }}
+  initialValues={{ type: 1 }}
+  onFinish={onFinish}
+>
+```
+
+## 9. 编辑文章-文案适配
+
+`本节目标:` 能够在编辑文章时展示数据
+
+**实现步骤**
+
+1.  通过路由参数拿到文章id
+
+2.  根据文章 id 是否存在判断是否为编辑状态
+
+3.  如果是编辑状态，展示编辑时的文案信息
+
+**代码实现**
+
+```jsx
+import { useSearchParams } from 'react-router-dom'
+
+const Publish = () => {
+  const [params] = useSearchParams()
+  const articleId = params.get('id')
+
+  return (
+    <Card
+      title={
+        <Breadcrumb separator=">">
+          <Breadcrumb.Item>
+            <Link to="/home">首页</Link>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>
+            {articleId ? '修改文章' : '发布文章'}
+          </Breadcrumb.Item>
+        </Breadcrumb>
+      }
+    >
+      // ...
+      <Button size="large" type="primary" htmlType="submit">
+        {articleId ? '修改文章' : '发布文章'}
+      </Button>
+  )
+}
+```
+
+## 10.编辑文章-数据获取
+
+`本节目标:` 使用id获取文章详情
+
+判断文章 id 是否存在，如果存在就根据 id 获取文章详情数据
+
+```js
+useEffect(() => {
+    async function getArticle () {
+      const res = await http.get(`/mp/articles/${articleId}`)
+    }
+    if (articleId) {
+      // 拉取数据回显
+      getArticle()
+    }
+}, [articleId])
+```
+
+## 11. 编辑文章-回显Form
+
+`本节目标:` 完成Form组件的回填操作
+
+调用Form组件的实例对象方法 `setFieldsValue`
+
+```js
+useEffect(() => {
+    async function getArticle () {
+      const res = await http.get(`/mp/articles/${articleId}`)
+      const { cover, ...formValue } = res.data
+      // 动态设置表单数据
+      form.setFieldsValue({ ...formValue, type: cover.type })
+    }
+    if (articleId) {
+      // 拉取数据回显
+      getArticle()
+    }
+}, [articleId])
+```
+
+## 12. 编辑文章-回显Upload相关
+
+1.Upload回显列表 fileList   2. 暂存列表 cacheImgList   3. 图片数量 imgCount
+
+核心要点：**fileList和暂存列表要求格式统一**
+
+表单的赋值回显需要调用`setFieldsValue`方法，其中图片上传upload组件的回显依赖的数据格式如下：
+
+```js
+[
+  { url: 'http://geek.itheima.net/uploads/1647066120170.png' }  
+  ...
+]
+```
+
+接口返回的数据格式如下
+
+```json
+{
+    "data": {
+        "id": "f3f7ad67-6345-4fb7-a031-755e894258c2",
+        "title": "云朵三个",
+        "channel_id": 2,
+        "content": "<p>测试一下</p>",
+        "cover": {
+            "type": 3,
+            "images": [
+                "http://geek.itheima.net/uploads/1685975569252.jpg",
+                "http://geek.itheima.net/uploads/1685975577904.jpg",
+                "http://geek.itheima.net/uploads/1685975578274.jpg"
+            ]
+        },
+        "pub_date": "2023-06-05 22:33:07"
+    },
+    "message": "OK"
+}
+```
+
+**代码实现**
+
+```jsx
+  //数据回填 1.表单回填 2.暂存列表  3.更新组件fileList
+  const form = useRef(null)
+  useEffect(() => {
+    const loadDetail = async () => {
+      const res = await http.get(`/mp/articles/${id}`)
+      // 表单数据回填
+      form.current.setFieldsValue({...res.data, type: res.data.cover.type})
+      const formatImgList = res.data.cover.images.map(url => ({url}))
+      setFileList(formatImgList)
+
+      // cachaImgList.current也是一个对象数组，因此也要进行数据处理
+      cachaImgList.current = formatImgList
+    }
+    // 必须是编辑状态，才可以发送请求
+    if(id){
+      loadDetail()
+    } 
+  }, [id])
+```
+
+## 11. 编辑保存
+
+`本节目标:` 能够在编辑文章时对文章进行修改
+
+**代码实现**
+
+```js
+// 提交表单
+const onFinish = async (values) => {
+    const { type, ...rest } = values
+    const data = {
+      ...rest,
+      // 注意：接口会按照上传图片数量来决定单图 或 三图
+      cover: {
+        type,
+        images: fileList.map(item => item.url)
+      }
+    }
+    if(articleId){
+      // 编辑
+      await http.put(`/mp/articles/${data.id}?draft=false`,data)
+    }else{
+      // 新增
+      await http.post('/mp/articles?draft=false', data)
+    }
+}
+```
+
+# 6. 项目打包
+
+## 1. 项目打包
+
+`本节目标:` 能够通过命令对项目进行打包
+
+**使用步骤**
+
+1.  在项目根目录下打开终端，输入打包命令：`yarn build`
+
+2.  等待打包完成，打包生成的内容被放在根下的build文件夹中
+
+## 2. 项目本地预览
+
+`本节目标:` 能够在本地预览打包后的项目
+
+**使用步骤**
+
+1.  全局安装本地服务包 `npm i -g serve`  该包提供了serve命令，用来启动本地服务
+
+2.  在项目根目录中执行命令 `serve -s ./build`  在build目录中开启服务器
+
+3.  在浏览器中访问：`http://localhost:3000/` 预览项目
+
+## 3. 打包体积分析
+
+`本节目标:`   能够分析项目打包体积
+
+**分析说明**通过分析打包体积，才能知道项目中的哪部分内容体积过大，才能知道如何来优化
+
+**使用步骤**
+
+1.  安装分析打包体积的包：`yarn add source-map-explorer`
+2.  在 package.json 中的 scripts 标签中，添加分析打包体积的命令
+3.  对项目打包：`yarn build`（如果已经打过包，可省略这一步）
+4.  运行分析命令：`yarn analyze`
+5.  通过浏览器打开的页面，分析图表中的包体积
+
+**核心代码**：
+
+package.json 中：
+
+```json
+"scripts": {
+  "analyze": "source-map-explorer 'build/static/js/*.js'",
+}
+```
+
+## 4. 优化-配置CDN
+
+`本节目标:`  能够对第三方包使用CDN优化
+
+**分析说明**：通过 craco 来修改 webpack 配置，从而实现 CDN 优化
+
+**核心代码**
+
+`craco.config.js`
+
+```js
+// 添加自定义对于webpack的配置
+
+const path = require('path')
+const { whenProd, getPlugin, pluginByName } = require('@craco/craco')
+
+module.exports = {
+  // webpack 配置
+  webpack: {
+    // 配置别名
+    alias: {
+      // 约定：使用 @ 表示 src 文件所在路径
+      '@': path.resolve(__dirname, 'src')
+    },
+    // 配置webpack
+    // 配置CDN
+    configure: (webpackConfig) => {
+      // webpackConfig自动注入的webpack配置对象
+      // 可以在这个函数中对它进行详细的自定义配置
+      // 只要最后return出去就行
+      let cdn = {
+        js: [],
+        css: []
+      }
+      // 只有生产环境才配置
+      whenProd(() => {
+        // key:需要不参与打包的具体的包
+        // value: cdn文件中 挂载于全局的变量名称 为了替换之前在开发环境下
+        // 通过import 导入的 react / react-dom
+        webpackConfig.externals = {
+          react: 'React',
+          'react-dom': 'ReactDOM'
+        }
+        // 配置现成的cdn 资源数组 现在是公共为了测试
+        // 实际开发的时候 用公司自己花钱买的cdn服务器
+        cdn = {
+          js: [
+            'https://cdnjs.cloudflare.com/ajax/libs/react/18.1.0/umd/react.production.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.1.0/umd/react-dom.production.min.js',
+          ],
+          css: []
+        }
+      })
+
+      // 都是为了将来配置 htmlWebpackPlugin插件 将来在public/index.html注入
+      // cdn资源数组时 准备好的一些现成的资源
+      const { isFound, match } = getPlugin(
+        webpackConfig,
+        pluginByName('HtmlWebpackPlugin')
+      )
+
+      if (isFound) {
+        // 找到了HtmlWebpackPlugin的插件
+        match.userOptions.cdn = cdn
+      }
+
+      return webpackConfig
+    }
+  }
+}
+```
+
+public/index.html
+
+```html
+<body>
+  <div id="root"></div>
+  <!-- 加载第三发包的 CDN 链接 -->
+  <% htmlWebpackPlugin.userOptions.cdn.js.forEach(cdnURL => { %>
+    <script src="<%= cdnURL %>"></script>
+  <% }) %>
+</body>
+```
+
+## 5. 优化-路由懒加载
+
+`本节目标:`   能够对路由进行懒加载实现代码分隔
+
+**使用步骤**
+
+1.  在 App 组件中，导入 Suspense 组件
+
+2.  在 路由Router 内部，使用 Suspense 组件包裹组件内容
+
+3.  为 Suspense 组件提供 fallback 属性，指定 loading 占位内容
+
+4.  导入 lazy 函数，并修改为懒加载方式导入路由组件
+
+**代码实现**
+
+`App.js`
+
+```jsx
+import { Routes, Route } from 'react-router-dom'
+import { HistoryRouter, history } from './utils/history'
+import { AuthRoute } from './components/AuthRoute'
+
+// 导入必要组件
+import { lazy, Suspense } from 'react'
+// 按需导入路由组件
+const Login = lazy(() => import('./pages/Login'))
+const Layout = lazy(() => import('./pages/Layout'))
+const Home = lazy(() => import('./pages/Home'))
+const Article = lazy(() => import('./pages/Article'))
+const Publish = lazy(() => import('./pages/Publish'))
+
+function App () {
+  return (
+    <HistoryRouter history={history}>
+      <Suspense
+        fallback={
+          <div
+            style={{
+              textAlign: 'center',
+              marginTop: 200
+            }}
+          >
+            loading...
+          </div>
+        }
+      >
+        <Routes>
+          {/* 需要鉴权的路由 */}
+          <Route path="/" element={
+            <AuthRoute>
+              <Layout />
+            </AuthRoute>
+          }>
+            {/* 二级路由默认页面 */}
+            <Route index element={<Home />} />
+            <Route path="article" element={<Article />} />
+            <Route path="publish" element={<Publish />} />
+          </Route>
+          {/* 不需要鉴权的路由 */}
+          <Route path='/login' element={<Login />} />
+        </Routes>
+      </Suspense>
+    </HistoryRouter>
+  )
+}
+
+export default App
+```
+
+**查看效果**
+
+我们可以在打包之后，通过切换路由，监控network面板资源的请求情况，验证是否分隔成功
