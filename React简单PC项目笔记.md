@@ -1593,7 +1593,7 @@ const Article = () => {
 
 ### 问题
 
-封面部分的代码有问题，从第5.8章节可以知道，`cover` 是一个对象，里面包含了type和images列表（多张图片的url），因此src应该等于 `cover.imges[i]`
+封面部分的代码有问题，从第5.8章节可以知道，`cover` 是一个对象，里面包含了type和images列表（多张图片的url），因此src应该根据图片数量判断，正确代码如下
 
 ```js
 {
@@ -1601,9 +1601,14 @@ const Article = () => {
   dataIndex: 'cover',
   width:120,
   render: cover => {
-    return <img src={cover.images || img404} width={80} height={60} alt="" />
+    if(cover.type === 3){
+        return cover.images.map(item => (
+            <img src={item} width={200} height={150} alt="" />
+        ))
+    }
+    return <img src={cover.images} width={200} height={150} alt="" />
   }
-}
+},
 ```
 
 ## 3. 渲染频道数据
@@ -2527,6 +2532,62 @@ const onFinish = async (values) => {
     }
 }
 ```
+
+### 问题
+
+当编辑文章后提交时，`images: fileList.map(item => item.response.data.url)`会报错，Cannot read properties of undefined (reading 'data') 这是因为点击编辑文章后数据回填时，fileList只包含了url，并没有response
+
+```js
+      const res = await http.get(`/mp/articles/${id}`)
+      // 表单数据回填
+      form.current.setFieldsValue({...res.data, type: res.data.cover.type})
+      const formatImgList = res.data.cover.images.map(url => ({url}))
+      setFileList(formatImgList)
+```
+
+但文章发布的时候，提交的数据格式比较复杂，以下代码的逻辑应该进行修改
+
+```jsx
+  // 更新上传图片列表
+  const onUploadChange = ({ fileList })  => {
+    setFileList(fileList)
+    //将fileList 存入到仓库中一份
+    cachaImgList.current = fileList
+  }
+```
+
+修改后的代码
+
+```jsx
+  const onUploadChange = ({ fileList })  => {
+    // 这里关键位置： 需要做数据格式化
+    const formatList = fileList.map(file => {
+      // 上传完毕，做数据处理
+      if(file.response){
+        return {
+          url: file.response.url
+        }
+      }
+      // 在上传中时，不做处理
+      return file
+    })
+    setFileList(formatList)
+    //将fileList 存入到仓库中一份
+    cachaImgList.current = formatList
+  }
+  
+ const params = {
+  channel_id,
+  content,
+  title,
+  type,
+  cover: {
+    type: type,
+    images: fileList.map(item => item.url) // 这里做了修改
+  }
+}
+```
+在react中，表单的onchange方法会监听并处理多个事件，比如文件开始上传、文件上传中、文件上传成功都在onchange中处理，因此要判断不同的情况。但vue不会这样，vue不使用合成事件，每一个事件都有对应的原生事件，不会一个事件处理多种状态。
 
 # 6. 项目打包
 
