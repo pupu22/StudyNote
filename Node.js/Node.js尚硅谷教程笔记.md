@@ -156,3 +156,146 @@ Node.js 的性能和效率非常高。
 -   程序运行不稳定，可能会出现服务不可用的情况
 -   程序运行效率较低，每秒的请求数维持在一个较低的水平
 -   前端同学对服务器端的技术不太熟悉。
+# 【npm的使用】
+
+##  包和npm
+
+###  什么是包
+
+由于 Node 是一套轻内核的平台，虽然提供了一系列的内置模块，但是不足以满足开发者的需求，于是乎出现了包（package）的概念： 与核心模块类似，就是将一些预先设计好的功能或者说 API 封装到一个文件夹，提供给开发者使用。
+
+Node 本身并没有太多的功能性 API，所以市面上涌现出大量的第三方人员开发出来的 Package。
+### 包的加载机制
+
+Node.js中使用`CommonJs`模块化机制，通过`npm`下载的第三方包，我们在项目中引入第三方包都是：`let xx = require('第三方包名')`，究竟`require`方法加载第三方包的原理机制是什么，今天我们来探讨下。
+
+1.  `require('第三方包名')`优先在加载该包的模块的同级目录`node_modules`中查找第三方包。
+1.  找到该第三方包中的`package.json`文件，并且找到里面的`main`属性对应的入口模块，该入口模块即为加载的第三方模块。
+1.  如果在要加载的第三方包中没有找到`package.json`文件或者是`package.json`文件中没有`main`属性，则默认加载第三方包中的`index.js`文件。
+1.  如果在加载第三方模块的文件的同级目录没有找到`node_modules`文件夹，或者以上所有情况都没有找到，则会向上一级父级目录下查找`node_modules`文件夹，查找规则如上一致。
+1.  如果一直找到该模块的磁盘根路径都没有找到，则会报错：`can not find module xxx`。
+
+### npm 的概念
+
+**NPM**：Node Package Manager。官方链接： https://www.npmjs.com/
+
+Node.js 发展到现在，已经形成了一个非常庞大的生态圈。包的生态圈一旦繁荣起来，就必须有工具去来管理这些包。NPM 应运而生。
+
+举个例子，当我们在使用 Java 语言做开发时，需要用到 JDK 提供的内置库，以及第三方库。同样，在使用 JS 做开发时，我们可以使用 NPM 包管理器，方便地使用成熟的、优秀的第三方框架，融合到我们自己的项目中，极大地加速日常开发的构建过程。
+
+随着时间的发展，NPM 出现了两层概念：
+
+-   一层含义是 Node 的开放式模块登记和管理系统，亦可以说是一个生态圈，一个社区。
+-   另一层含义是 Node 默认的模块管理器，是一个命令行下的软件，用来安装和管理 Node 模块。
+
+### npm 的安装（不需要单独安装）
+
+NPM 不需要单独安装。默认在安装 Node 的时候，会连带一起安装 NPM
+
+## npm命令总结
+
+```
+1.npm init -y 添加初始化文件记录安装信息，如果在后面加-S或者-D会自动创建该文件
+
+2.npm install 包名 –g  （uninstall,update）
+
+3.npm install 包名 --save（-S） --dev(-D)  (uninstall,update)
+如果不写后缀默认是安装到生产环境
+如果先装到了开发环境，那么后面覆盖安装不写后缀也是本身的环境下
+一个包只能存在在一种环境，得先卸载才能换环境
+
+4.npm list -g (不加-g，列举当前目录下的安装包)
+
+5.npm info 包名（详细信息） npm info 包名 version (获取最新版本)
+
+6.npm install md5@1.8.0（安装指定版本）
+
+7.npm outdated(检查包是否已经过时)
+如果版本比较新就不会有输出
+
+8.pwd输出当前目录的绝对路径
+
+9.npm view 包名 version查看当前版本   npm view 包名 versions查看该包所有版本
+
+10.npm update 包名 更新指定包 npm update 更新所有的包（pnpm up）
+
+11.npm config list  查看npm配置信息
+
+12.npm 指定命令 --help 查看指定命令的帮助。
+
+13.npm root：查看当前包的安装路径。  npm root -g：查看全局的包的安装路径。
+
+14.npm ls 包名：查看本地安装的指定包及版本信息，没有显示empty。 npm ls 包名 -g：查看全局安装的指定包及版本信息
+
+15.npm cache clean --force 清除缓存
+
+16.npm -v查看npm的版本
+
+
+"dependencies": {    "md5": "^2.1.0"  }  ^ 表示 如果 直接npm install 将会 安md5@2.*.*  	最新版本
+
+"dependencies": {    "md5": "~2.1.0"  }  ~ 表示 如果 直接npm install 将会 安装md5 2.1.*  最新版本
+
+"dependencies": {    "md5": "*"  }  * 表示 如果 直接npm install 将会 安装 md5  最新版本
+```
+## pnpm
+
+### [](https://gitee.com/river-ice/notes/blob/master/%E5%89%8D%E7%AB%AF/nodejs/%E5%A4%A7%E4%BD%AC/03%20%E3%80%90npm%E7%9A%84%E4%BD%BF%E7%94%A8%E3%80%91.md#51-pnpm-%E6%98%AF%E4%BB%80%E4%B9%88)5.1 pnpm 是什么
+
+> pnpm是 Node.js 的替代包管理器。它是 npm 的直接替代品，但速度更快、效率更高。
+
+> 为什么效率更高？当您安装软件包时，我们会将其保存在您机器上的全局存储中，然后我们会从中创建一个硬链接，而不是进行复制。对于模块的每个版本，磁盘上只保留一个副本。例如，当使用 npm 或 yarn 时，如果您有 100 个使用 lodash 的包，则磁盘上将有 100 个 lodash 副本。pnpm 可让您节省数 GB 的磁盘空间！
+
+pnpm优势 pnpm 拥有 Yarn 超过 npm 的所有附加功能：
+
+-   **安全**: 与 yarn 一样，pnpm 有一个包含所有已安装包校验和的特殊文件，用于在执行代码之前验证每个已安装包的完整性。
+-   **离线模式**: pnpm 将所有下载的包 tarball 保存在本地注册表镜像中。当包在本地可用时，它从不发出请求。使用该--offline参数可以完全禁止 HTTP 请求。
+-   **速度**: pnpm 不仅比 npm 快，而且比 yarn 快。无论是冷缓存还是热缓存，它都比 yarn 快。yarn 从缓存中复制文件，而 pnpm 只是从全局存储中链接它们。
+
+### [](https://gitee.com/river-ice/notes/blob/master/%E5%89%8D%E7%AB%AF/nodejs/%E5%A4%A7%E4%BD%AC/03%20%E3%80%90npm%E7%9A%84%E4%BD%BF%E7%94%A8%E3%80%91.md#pnpm-%E7%9A%84%E4%BD%BF%E7%94%A8)pnpm 的使用
+
+**官网**： `https://pnpm.js.org/installation/`
+
+**全局安装**
+
+```
+npm install pnpm -g
+```
+
+**设置源**
+
+```
+//查看源
+pnpm config get registry 
+//切换淘宝源
+pnpm config set registry https://registry.npmmirror.com/
+```
+
+**使用**
+
+```
+//可以和npm一样使用方式
+
+pnpm init //直接初始化
+pnpm install 包  // 
+pnpm i 包
+pnpm add 包    // -S  默认写入dependencies
+pnpm add -D    // -D devDependencies
+pnpm add -g    // 全局安装
+```
+
+**移除**
+
+```
+pnpm remove(uninstall) 包                            //移除包
+pnpm remove 包 --global                   //移除全局包
+```
+
+**更新**
+
+```
+pnpm up                //更新所有依赖项
+pnpm upgrade 包        //更新包
+pnpm upgrade 包 --global   //更新全局包
+pnpm up --latest //最新更新所有依赖项，忽略package.json中指定的范围
+```
